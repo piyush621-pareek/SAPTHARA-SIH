@@ -24,8 +24,15 @@ export function createApp(): Application {
   app.use(express.urlencoded({ extended: true }));
   app.use(morgan(isProd ? "combined" : "dev"));
 
-  // Static hosting for the downloadable APK (in-app self-update). Drop the
-  // release build at node-api/public/saptahara.apk -> served at /downloads/.
+  // Dedicated APK download — correct MIME type + attachment so the phone
+  // browser hands it to the package installer intact (avoids "invalid package").
+  app.get("/downloads/saptahara.apk", (_req: Request, res: Response) => {
+    const apk = path.join(process.cwd(), "public", "saptahara.apk");
+    res.setHeader("Content-Type", "application/vnd.android.package-archive");
+    res.setHeader("Content-Disposition", "attachment; filename=saptahara.apk");
+    res.sendFile(apk);
+  });
+  // Static hosting for any other files under public/.
   app.use("/downloads", express.static(path.join(process.cwd(), "public")));
 
   // --- Rate limiting ---
