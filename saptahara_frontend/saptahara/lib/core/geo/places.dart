@@ -41,6 +41,12 @@ class Places {
     ('Namchi', 27.17, 88.36),
   ];
 
+  /// Public list of selectable NER places (name, lat, lng) for route pickers.
+  static List<({String name, double lat, double lng})> get all => (_places
+          .map((p) => (name: p.$1, lat: p.$2, lng: p.$3))
+          .toList())
+      ..sort((a, b) => a.name.compareTo(b.name));
+
   static double _km(double aLat, double aLng, double bLat, double bLng) {
     const r = 6371.0;
     double rad(double d) => d * math.pi / 180.0;

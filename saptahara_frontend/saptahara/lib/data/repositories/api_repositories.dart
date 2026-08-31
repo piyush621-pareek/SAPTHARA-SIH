@@ -122,10 +122,15 @@ class ApiRouteRepository implements RouteRepository {
   List<RouteOption> readCached() => _cache;
 
   @override
-  Future<List<RouteOption>> refresh() async {
+  Future<List<RouteOption>> refresh() =>
+      plan(ApiConfig.originLat, ApiConfig.originLng, ApiConfig.destLat, ApiConfig.destLng);
+
+  @override
+  Future<List<RouteOption>> plan(
+      double oLat, double oLng, double dLat, double dLng) async {
     final body = await ApiClient.instance.postJson('/routing/route', {
-      'origin': {'latitude': ApiConfig.originLat, 'longitude': ApiConfig.originLng},
-      'destination': {'latitude': ApiConfig.destLat, 'longitude': ApiConfig.destLng},
+      'origin': {'latitude': oLat, 'longitude': oLng},
+      'destination': {'latitude': dLat, 'longitude': dLng},
     });
     final data = body is Map ? body['data'] as Map? : null;
     final alts = (data?['alternatives'] as List?) ?? const [];

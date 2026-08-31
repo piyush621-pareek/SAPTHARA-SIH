@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:saptahara/app/providers.dart';
 import 'package:saptahara/core/i18n/i18n.dart';
+import 'package:saptahara/core/geo/places.dart';
 import 'package:saptahara/core/theme/app_theme.dart';
 import 'package:saptahara/domain/entities/entities.dart';
 import 'package:saptahara/presentation/widgets/app_card.dart';
@@ -37,6 +38,8 @@ class RouteScreen extends ConsumerWidget {
                   return ListView(
                     padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
                     children: [
+                      const _RoutePlanner(),
+                      const SizedBox(height: 12),
                       AppCard(
                         padding: const EdgeInsets.all(10),
                         child: LiveMap(
@@ -196,6 +199,96 @@ class _RouteRow extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+/// From/To route planner — pick your current location and destination from NER
+/// places; computes the hazard-aware route + distance on demand (Maps-style).
+class _RoutePlanner extends ConsumerStatefulWidget {
+  const _RoutePlanner();
+  @override
+  ConsumerState<_RoutePlanner> createState() => _RoutePlannerState();
+}
+
+class _RoutePlannerState extends ConsumerState<_RoutePlanner> {
+  late int _from = _indexOf('Guwahati');
+  late int _to = _indexOf('Tawang');
+
+  int _indexOf(String name) {
+    final list = Places.all;
+    final i = list.indexWhere((p) => p.name == name);
+    return i >= 0 ? i : 0;
+  }
+
+  Future<void> _find() async {
+    final list = Places.all;
+    final o = list[_from], d = list[_to];
+    await ref
+        .read(routesControllerProvider.notifier)
+        .planRoute(o.lat, o.lng, d.lat, d.lng);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final places = Places.all;
+    final lang = ref.watch(languageProvider);
+    return AppCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.alt_route_rounded, color: AppColors.purpleTrust),
+              const SizedBox(width: 8),
+              Text(AppStrings.t('planRoute', lang),
+                  style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 15)),
+            ],
+          ),
+          const SizedBox(height: 10),
+          _picker(Icons.my_location_rounded, AppStrings.t('fromLabel', lang), _from,
+              (v) => setState(() => _from = v), places),
+          const SizedBox(height: 8),
+          _picker(Icons.place_rounded, AppStrings.t('toLabel', lang), _to,
+              (v) => setState(() => _to = v), places),
+          const SizedBox(height: 10),
+          SizedBox(
+            height: 46,
+            child: ElevatedButton.icon(
+              onPressed: _from == _to ? null : _find,
+              icon: const Icon(Icons.search_rounded, color: AppColors.white, size: 18),
+              label: Text(AppStrings.t('findRoute', lang),
+                  style: const TextStyle(color: AppColors.white, fontWeight: FontWeight.w900)),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.purpleTrust,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(AppRadii.cardSm),
+                  side: const BorderSide(color: AppColors.black, width: 2),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _picker(IconData icon, String label, int value, ValueChanged<int> onChanged,
+      List<({String name, double lat, double lng})> places) {
+    return DropdownButtonFormField<int>(
+      value: value,
+      isExpanded: true,
+      decoration: InputDecoration(
+        labelText: label,
+        prefixIcon: Icon(icon, size: 20),
+        isDense: true,
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(AppRadii.cardSm)),
+      ),
+      items: [
+        for (var i = 0; i < places.length; i++)
+          DropdownMenuItem(value: i, child: Text(places[i].name)),
+      ],
+      onChanged: (v) => v != null ? onChanged(v) : null,
     );
   }
 }

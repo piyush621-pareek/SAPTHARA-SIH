@@ -22,6 +22,9 @@ abstract class RouteRepository {
 
   /// Simulates a network refresh; throws on simulated failure.
   Future<List<RouteOption>> refresh();
+
+  /// Compute the hazard-aware route between two arbitrary points.
+  Future<List<RouteOption>> plan(double oLat, double oLng, double dLat, double dLng);
 }
 
 abstract class AlertRepository {

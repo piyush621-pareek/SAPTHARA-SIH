@@ -88,6 +88,10 @@ class MockRouteRepository implements RouteRepository {
     _cache = _seed();
     return _cache;
   }
+
+  @override
+  Future<List<RouteOption>> plan(double oLat, double oLng, double dLat, double dLng) =>
+      refresh();
 }
 
 /// ---------- Alerts ----------

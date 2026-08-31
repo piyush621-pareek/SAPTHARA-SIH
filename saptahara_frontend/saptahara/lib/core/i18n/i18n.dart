@@ -218,6 +218,10 @@ class AppStrings {
     'sosSent': {'en': 'SOS Sent', 'hi': 'एसओएस भेजा गया', 'as': 'এছঅ’এছ পঠিওৱা হ’ল', 'bn': 'এসওএস পাঠানো হয়েছে'},
     'sosFailed': {'en': 'SOS Failed to Send', 'hi': 'एसओएस भेजने में विफल', 'as': 'এছঅ’এছ পঠিয়াবলৈ ব্যৰ্থ', 'bn': 'এসওএস পাঠাতে ব্যর্থ'},
     'satUnavailable': {'en': 'Satellite feed unavailable', 'hi': 'सैटेलाइट फ़ीड अनुपलब्ध', 'as': 'উপগ্ৰহ ফিড উপলব্ধ নহয়', 'bn': 'স্যাটেলাইট ফিড অনুপলব্ধ'},
+    'planRoute': {'en': 'Plan Your Route', 'hi': 'अपना मार्ग बनाएं', 'as': 'আপোনাৰ পথ পৰিকল্পনা কৰক', 'bn': 'আপনার রুট পরিকল্পনা করুন'},
+    'fromLabel': {'en': 'From (current location)', 'hi': 'कहाँ से (वर्तमान स्थान)', 'as': 'ক’ৰ পৰা (বৰ্তমান স্থান)', 'bn': 'কোথা থেকে (বর্তমান অবস্থান)'},
+    'toLabel': {'en': 'To (destination)', 'hi': 'कहाँ तक (गंतव्य)', 'as': 'ক’লৈ (গন্তব্য)', 'bn': 'কোথায় (গন্তব্য)'},
+    'findRoute': {'en': 'Find Safe Route', 'hi': 'सुरक्षित मार्ग खोजें', 'as': 'সুৰক্ষিত পথ বিচাৰক', 'bn': 'নিরাপদ রুট খুঁজুন'},
   };
 
   static String t(String key, String lang) =>

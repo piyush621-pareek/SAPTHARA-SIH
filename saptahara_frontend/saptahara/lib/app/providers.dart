@@ -71,6 +71,16 @@ class RoutesController extends StateNotifier<AsyncValue<List<RouteOption>>> {
       }
     }
   }
+
+  /// Plan a hazard-aware route between two user-chosen points.
+  Future<void> planRoute(double oLat, double oLng, double dLat, double dLng) async {
+    state = const AsyncValue.loading();
+    try {
+      state = AsyncValue.data(await _repo.plan(oLat, oLng, dLat, dLng));
+    } catch (e, st) {
+      state = AsyncValue.error(e, st);
+    }
+  }
 }
 
 final routesControllerProvider =
