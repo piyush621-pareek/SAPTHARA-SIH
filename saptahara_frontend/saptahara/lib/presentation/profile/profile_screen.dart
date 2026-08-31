@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:saptahara/app/providers.dart';
+import 'package:saptahara/core/i18n/i18n.dart';
 import 'package:saptahara/core/theme/app_theme.dart';
 import 'package:saptahara/domain/entities/entities.dart';
 import 'package:saptahara/presentation/widgets/app_card.dart';
@@ -14,9 +15,10 @@ class ProfileScreen extends ConsumerWidget {
     final userAsync = ref.watch(currentUserProvider);
     final reports = ref.watch(reportsControllerProvider);
     final syncedReports = reports.where((r) => r.syncStatus == SyncStatus.synced).toList();
+    final lang = ref.watch(languageProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Profile')),
+      appBar: AppBar(title: Text(AppStrings.t('profileTitle', lang))),
       body: SafeArea(
         child: userAsync.when(
           data: (user) => ListView(
@@ -54,7 +56,7 @@ class ProfileScreen extends ConsumerWidget {
               _infoTile(context, 'Agency', user.agency),
               _infoTile(context, 'Field Team', user.team),
               const SizedBox(height: 20),
-              Text('Device Status', style: Theme.of(context).textTheme.titleLarge),
+              Text(AppStrings.t('deviceStatus', lang), style: Theme.of(context).textTheme.titleLarge),
               const SizedBox(height: 10),
               AppCard(
                 child: Row(
@@ -67,7 +69,7 @@ class ProfileScreen extends ConsumerWidget {
                 ),
               ),
               const SizedBox(height: 20),
-              Text('Sync', style: Theme.of(context).textTheme.titleLarge),
+              Text(AppStrings.t('syncTitle', lang), style: Theme.of(context).textTheme.titleLarge),
               const SizedBox(height: 10),
               AppCard(
                 child: Column(
@@ -86,7 +88,7 @@ class ProfileScreen extends ConsumerWidget {
                 ),
               ),
               const SizedBox(height: 20),
-              Text('Verification / Trust', style: Theme.of(context).textTheme.titleLarge),
+              Text(AppStrings.t('verificationTrust', lang), style: Theme.of(context).textTheme.titleLarge),
               const SizedBox(height: 10),
               _VerificationCard(reportId: reports.isNotEmpty ? reports.first.id : null),
             ],

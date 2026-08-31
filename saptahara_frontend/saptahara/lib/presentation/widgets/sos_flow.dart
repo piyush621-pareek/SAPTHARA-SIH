@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:saptahara/core/i18n/i18n.dart';
 import 'package:saptahara/core/location/location_service.dart';
 import 'package:saptahara/core/network/api_client.dart';
 import 'package:saptahara/core/network/api_config.dart';
@@ -20,13 +21,13 @@ Future<void> showSosFlow(BuildContext context, WidgetRef ref) async {
   );
 }
 
-class _SosSheet extends StatefulWidget {
+class _SosSheet extends ConsumerStatefulWidget {
   const _SosSheet();
   @override
-  State<_SosSheet> createState() => _SosSheetState();
+  ConsumerState<_SosSheet> createState() => _SosSheetState();
 }
 
-class _SosSheetState extends State<_SosSheet> {
+class _SosSheetState extends ConsumerState<_SosSheet> {
   SosState _state = SosState.confirming;
   MapPoint? _location;
 
@@ -63,6 +64,7 @@ class _SosSheetState extends State<_SosSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final lang = ref.watch(languageProvider);
     return Container(
       padding: EdgeInsets.fromLTRB(20, 20, 20, MediaQuery.of(context).viewInsets.bottom + 24),
       decoration: const BoxDecoration(
@@ -103,7 +105,7 @@ class _SosSheetState extends State<_SosSheet> {
           children: [
             const Icon(Icons.warning_amber_rounded, color: AppColors.riskyRed, size: 44),
             const SizedBox(height: 10),
-            Text('Confirm Emergency SOS', textAlign: TextAlign.center, style: Theme.of(context).textTheme.headlineMedium),
+            Text(AppStrings.t('confirmSos', ref.read(languageProvider)), textAlign: TextAlign.center, style: Theme.of(context).textTheme.headlineMedium),
             const SizedBox(height: 8),
             Text(
               'This will capture your current location and alert your response team immediately. Only use this in a genuine emergency.',
@@ -122,7 +124,7 @@ class _SosSheetState extends State<_SosSheet> {
                     side: const BorderSide(color: AppColors.black, width: 2.5),
                   ),
                 ),
-                child: const Text('HOLD TO CONFIRM SOS',
+                child: Text(AppStrings.t('holdToConfirm', ref.read(languageProvider)),
                     style: TextStyle(color: AppColors.white, fontWeight: FontWeight.w900, letterSpacing: 0.8)),
               ),
             ),
@@ -154,7 +156,7 @@ class _SosSheetState extends State<_SosSheet> {
           children: [
             const Icon(Icons.check_circle, color: AppColors.safeGreen, size: 48),
             const SizedBox(height: 10),
-            Text('SOS Sent', textAlign: TextAlign.center, style: Theme.of(context).textTheme.headlineMedium),
+            Text(AppStrings.t('sosSent', ref.read(languageProvider)), textAlign: TextAlign.center, style: Theme.of(context).textTheme.headlineMedium),
             const SizedBox(height: 6),
             Text(
               'Your location has been shared with the response team. Stay where you are if it is safe to do so.',
@@ -185,7 +187,7 @@ class _SosSheetState extends State<_SosSheet> {
           children: [
             const Icon(Icons.error, color: AppColors.riskyRed, size: 48),
             const SizedBox(height: 10),
-            Text('SOS Failed to Send', textAlign: TextAlign.center, style: Theme.of(context).textTheme.headlineMedium),
+            Text(AppStrings.t('sosFailed', ref.read(languageProvider)), textAlign: TextAlign.center, style: Theme.of(context).textTheme.headlineMedium),
             const SizedBox(height: 6),
             Text(
               'Your alert is saved locally and will keep retrying. You can retry manually now.',

@@ -57,7 +57,7 @@ class _ReportScreenState extends ConsumerState<ReportScreen> {
           children: [
             ListTile(
               leading: const Icon(Icons.camera_alt),
-              title: const Text('Take photo'),
+              title: Text(AppStrings.t('takePhoto2', ref.read(languageProvider))),
               onTap: () {
                 Navigator.pop(context);
                 _capturePhoto(ImageSource.camera);
@@ -65,7 +65,7 @@ class _ReportScreenState extends ConsumerState<ReportScreen> {
             ),
             ListTile(
               leading: const Icon(Icons.photo_library),
-              title: const Text('Choose from gallery'),
+              title: Text(AppStrings.t('chooseGallery', ref.read(languageProvider))),
               onTap: () {
                 Navigator.pop(context);
                 _capturePhoto(ImageSource.gallery);
@@ -74,7 +74,7 @@ class _ReportScreenState extends ConsumerState<ReportScreen> {
             if (_photoPath != null)
               ListTile(
                 leading: const Icon(Icons.delete_outline, color: AppColors.riskyRed),
-                title: const Text('Remove photo'),
+                title: Text(AppStrings.t('removePhoto', ref.read(languageProvider))),
                 onTap: () {
                   Navigator.pop(context);
                   setState(() => _photoPath = null);
@@ -126,10 +126,11 @@ class _ReportScreenState extends ConsumerState<ReportScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final lang = ref.watch(languageProvider);
     final reports = ref.watch(reportsControllerProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Report')),
+      appBar: AppBar(title: Text(AppStrings.t('reportTitle', lang))),
       body: SafeArea(
         child: Column(
           children: [
@@ -234,7 +235,7 @@ class _ReportScreenState extends ConsumerState<ReportScreen> {
                           ],
                         ),
                         const SizedBox(height: 14),
-                        Text('Report Type', style: Theme.of(context).textTheme.titleMedium),
+                        Text(AppStrings.t('reportType', lang), style: Theme.of(context).textTheme.titleMedium),
                         const SizedBox(height: 6),
                         Wrap(
                           spacing: 8,
@@ -256,7 +257,7 @@ class _ReportScreenState extends ConsumerState<ReportScreen> {
                           }).toList(),
                         ),
                         const SizedBox(height: 14),
-                        Text('Notes', style: Theme.of(context).textTheme.titleMedium),
+                        Text(AppStrings.t('notes', lang), style: Theme.of(context).textTheme.titleMedium),
                         const SizedBox(height: 6),
                         TextFormField(
                           controller: _notesController,
@@ -264,7 +265,7 @@ class _ReportScreenState extends ConsumerState<ReportScreen> {
                           decoration: _inputDecoration('Describe what you observed…'),
                         ),
                         const SizedBox(height: 14),
-                        Text('Urgency', style: Theme.of(context).textTheme.titleMedium),
+                        Text(AppStrings.t('urgency', lang), style: Theme.of(context).textTheme.titleMedium),
                         const SizedBox(height: 6),
                         Wrap(
                           spacing: 8,
@@ -297,7 +298,7 @@ class _ReportScreenState extends ConsumerState<ReportScreen> {
                                 side: const BorderSide(color: AppColors.black, width: 2.2),
                               ),
                             ),
-                            child: const Text('SAVE OFFLINE',
+                            child: Text(AppStrings.t('saveOffline', lang),
                                 style: TextStyle(color: AppColors.white, fontWeight: FontWeight.w900, letterSpacing: 0.6)),
                           ),
                         ),

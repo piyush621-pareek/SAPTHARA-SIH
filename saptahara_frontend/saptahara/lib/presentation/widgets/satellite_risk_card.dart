@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:saptahara/core/i18n/i18n.dart';
 import 'package:saptahara/core/location/location_service.dart';
 import 'package:saptahara/core/network/api_client.dart';
 import 'package:saptahara/core/theme/app_theme.dart';
@@ -6,13 +8,13 @@ import 'package:saptahara/presentation/widgets/app_card.dart';
 
 /// Fetches the ISRO-fused (MOSDAC + CartoDEM + Bhuvan) landslide risk for the
 /// current location from the backend's /geo/risk endpoint and displays it.
-class SatelliteRiskCard extends StatefulWidget {
+class SatelliteRiskCard extends ConsumerStatefulWidget {
   const SatelliteRiskCard({super.key});
   @override
-  State<SatelliteRiskCard> createState() => _SatelliteRiskCardState();
+  ConsumerState<SatelliteRiskCard> createState() => _SatelliteRiskCardState();
 }
 
-class _SatelliteRiskCardState extends State<SatelliteRiskCard> {
+class _SatelliteRiskCardState extends ConsumerState<SatelliteRiskCard> {
   bool _loading = true;
   Map<String, dynamic>? _data;
   String? _error;
@@ -50,6 +52,7 @@ class _SatelliteRiskCardState extends State<SatelliteRiskCard> {
 
   @override
   Widget build(BuildContext context) {
+    final lang = ref.watch(languageProvider);
     return AppCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -58,8 +61,8 @@ class _SatelliteRiskCardState extends State<SatelliteRiskCard> {
             children: [
               const Text('🛰', style: TextStyle(fontSize: 18)),
               const SizedBox(width: 8),
-              const Expanded(
-                child: Text('Satellite Landslide Risk (ISRO)',
+              Expanded(
+                child: Text(AppStrings.t('satelliteRisk', lang),
                     style: TextStyle(fontWeight: FontWeight.w900, fontSize: 15)),
               ),
               IconButton(

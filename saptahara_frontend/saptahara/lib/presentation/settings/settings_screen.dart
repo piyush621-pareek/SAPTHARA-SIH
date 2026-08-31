@@ -28,6 +28,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final lang = ref.watch(languageProvider);
     final connectivity = ref.watch(connectivityProvider);
     final notifications = ref.watch(notificationsEnabledProvider);
     final locationPermission = ref.watch(locationPermissionProvider);
@@ -36,7 +37,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     final syncJobs = ref.watch(syncControllerProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Settings')),
+      appBar: AppBar(title: Text(AppStrings.t('settingsTitle', lang))),
       body: SafeArea(
         child: ListView(
           padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
@@ -72,7 +73,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  const Text('Backend URL',
+                  Text(AppStrings.t('backendUrl', lang),
                       style: TextStyle(fontWeight: FontWeight.w800)),
                   const SizedBox(height: 4),
                   const Text(
@@ -129,7 +130,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             AppCard(
               child: SwitchListTile(
                 contentPadding: EdgeInsets.zero,
-                title: const Text('Offline Mode', style: TextStyle(fontWeight: FontWeight.w800)),
+                title: Text(AppStrings.t('offlineMode', lang), style: TextStyle(fontWeight: FontWeight.w800)),
                 subtitle: Text(connectivity == ConnectivityState.offline
                     ? 'Simulating no network — cached data shown app-wide'
                     : 'App is online — live data + sync active'),
@@ -171,8 +172,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             AppCard(
               child: SwitchListTile(
                 contentPadding: EdgeInsets.zero,
-                title: const Text('Enable Notifications', style: TextStyle(fontWeight: FontWeight.w800)),
-                subtitle: const Text('Hazard, sync and SOS alerts'),
+                title: Text(AppStrings.t('enableNotifications', lang), style: TextStyle(fontWeight: FontWeight.w800)),
+                subtitle: Text(AppStrings.t('enableNotifSub', lang)),
                 value: notifications,
                 activeColor: AppColors.safeGreen,
                 onChanged: (v) => ref.read(notificationsEnabledProvider.notifier).state = v,
@@ -228,9 +229,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   SegmentedButton<MapStyle>(
-                    segments: const [
-                      ButtonSegment(value: MapStyle.standard, label: Text('Standard')),
-                      ButtonSegment(value: MapStyle.terrain, label: Text('Terrain')),
+                    segments: [
+                      ButtonSegment(value: MapStyle.standard, label: Text(AppStrings.t('standard', lang))),
+                      ButtonSegment(value: MapStyle.terrain, label: Text(AppStrings.t('terrain', lang))),
                     ],
                     selected: {mapStyle},
                     onSelectionChanged: (s) => ref.read(mapStyleProvider.notifier).state = s.first,
