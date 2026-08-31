@@ -13,3 +13,6 @@ dump_err.log
 # secrets
 .env
 **/.env
+tools/
+tunnel*.log
+*.apk
