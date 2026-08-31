@@ -48,6 +48,41 @@ class AuthController extends StateNotifier<AuthState> {
     }
   }
 
+  /// Create a new account (stored in the backend database), then sign in.
+  /// Returns null on success, or an error message.
+  Future<String?> register({
+    required String fullName,
+    required String phone,
+    required String password,
+    required String role, // 'driver' or 'field_officer'
+    String? homeState,
+  }) async {
+    // The backend enum uses 'dispatcher' for a field officer / control operator.
+    final apiRole = role == 'field_officer' ? 'dispatcher' : 'driver';
+    try {
+      final res = await ApiClient.instance.postJson("/auth/register", {
+        "full_name": fullName,
+        "phone": phone,
+        "password": password,
+        "role": apiRole,
+        if (homeState != null && homeState.isNotEmpty) "home_state": homeState,
+      });
+      final data = res is Map ? res["data"] as Map? : null;
+      final token = data?["token"]?.toString();
+      final name = (data?["user"] as Map?)?["full_name"]?.toString();
+      final refresh = data?["refreshToken"]?.toString();
+      if (token == null) return "Could not create account (server response).";
+      ApiClient.instance.setAuthToken(token);
+      await LocalStore.setString("auth_token", token);
+      if (refresh != null) await LocalStore.setString("auth_refresh", refresh);
+      if (name != null) await LocalStore.setString("auth_name", name);
+      state = AuthState(token: token, name: name);
+      return null;
+    } catch (e) {
+      return "Could not create account. That phone may already be registered.";
+    }
+  }
+
   void continueAsGuest() => state = const AuthState(guest: true);
 
   Future<void> logout() async {

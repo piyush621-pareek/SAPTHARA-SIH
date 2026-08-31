@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:saptahara/app/auth.dart';
 import 'package:saptahara/core/theme/app_theme.dart';
+import 'package:saptahara/presentation/auth/signup_screen.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
@@ -55,7 +56,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     textAlign: TextAlign.center,
                     style: Theme.of(context).textTheme.headlineMedium),
                 const SizedBox(height: 4),
-                const Text("NER Field Operations — Sign in",
+                const Text("NER Logistics — Driver & Field Officer",
                     textAlign: TextAlign.center,
                     style: TextStyle(color: AppColors.black)),
                 const SizedBox(height: 24),
@@ -95,7 +96,22 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                             style: TextStyle(color: AppColors.white, fontWeight: FontWeight.w900)),
                   ),
                 ),
-                const SizedBox(height: 10),
+                const SizedBox(height: 6),
+                OutlinedButton(
+                  onPressed: _busy
+                      ? null
+                      : () => Navigator.of(context).push(
+                            MaterialPageRoute(builder: (_) => const SignupScreen()),
+                          ),
+                  style: OutlinedButton.styleFrom(
+                    side: const BorderSide(color: AppColors.black, width: 1.8),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadii.card)),
+                    minimumSize: const Size.fromHeight(50),
+                  ),
+                  child: const Text("Create new account",
+                      style: TextStyle(color: AppColors.black, fontWeight: FontWeight.w800)),
+                ),
+                const SizedBox(height: 4),
                 TextButton(
                   onPressed: _busy ? null : () => ref.read(authProvider.notifier).continueAsGuest(),
                   child: const Text("Continue as guest (demo)",
