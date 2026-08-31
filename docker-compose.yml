@@ -73,6 +73,8 @@ services:
       REDIS_URL: redis://redis:6379
       AI_SERVICE_URL: http://ai-service:9000
       CORS_ORIGIN: "*"
+      APP_VERSION: "1.1.0"
+      APP_RELEASE_NOTES: "Bug fixes: report location picker + GPS, real location permission, real battery, route planner."
     ports:
       - "8080:8080"
     volumes:

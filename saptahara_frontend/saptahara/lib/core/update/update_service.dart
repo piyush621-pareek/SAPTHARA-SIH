@@ -3,7 +3,7 @@ import 'package:saptahara/core/network/api_client.dart';
 
 /// The version this build reports. Bump it in lockstep with the server's
 /// APP_VERSION so the in-app updater knows when a newer APK is available.
-const String kAppVersion = '1.0.0';
+const String kAppVersion = '1.1.0';
 
 class UpdateInfo {
   final String version;
