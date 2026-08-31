@@ -75,6 +75,10 @@ services:
       CORS_ORIGIN: "*"
     ports:
       - "8080:8080"
+    volumes:
+      # Serve the downloadable APK live — replace node-api/public/saptahara.apk
+      # to publish an app update without rebuilding the image.
+      - ./node-api/public:/app/public
     networks:
       - ner_net
 
