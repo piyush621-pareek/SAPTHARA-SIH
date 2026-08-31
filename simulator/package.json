@@ -1,0 +1,17 @@
+{
+  "name": "ner-fleet-simulator",
+  "version": "1.0.0",
+  "description": "Streams simulated GPS telemetry for virtual trucks on the Guwahati-Tawang highway (SIH26002 demo driver).",
+  "type": "commonjs",
+  "main": "simulate.js",
+  "scripts": {
+    "start": "node simulate.js",
+    "seed": "node simulate.js --seed-only"
+  },
+  "dependencies": {
+    "pg": "^8.12.0"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

@@ -1,0 +1,35 @@
+name: saptahara
+description: "SAPTHARA — SIH 2026 NER Smart Logistics & Accessibility (Frontend-only demo build)"
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.3.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_riverpod: ^2.5.1
+  uuid: ^4.4.0
+  intl: ^0.20.2
+  # --- Backend integration ---
+  http: ^1.2.2
+  socket_io_client: ^2.0.3+1
+  # --- Real map ---
+  flutter_map: ^7.0.2
+  latlong2: ^0.9.1
+  # --- Device capabilities ---
+  geolocator: ^13.0.1
+  shared_preferences: ^2.3.2
+  image_picker: ^1.1.2
+  flutter_local_notifications: ^17.2.3
+  flutter_localizations:
+    sdk: flutter
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^4.0.0
+
+flutter:
+  uses-material-design: true

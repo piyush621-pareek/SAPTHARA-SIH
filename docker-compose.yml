@@ -1,0 +1,103 @@
+# =============================================================================
+# AI-Based Smart Logistics & Accessibility Intelligence Platform (NER)
+# SIH26002 — Transportation & Logistics
+# Edge-First, Spatially Aware Orchestration
+# =============================================================================
+
+services:
+  # ---------------------------------------------------------------------------
+  # Spatial Data Store: PostgreSQL + PostGIS
+  # Holds users, vehicles, trips, telemetry, hazard polygons, and incidents.
+  # ---------------------------------------------------------------------------
+  postgis:
+    image: postgis/postgis:16-3.4
+    container_name: ner_postgis
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ner_admin
+      POSTGRES_PASSWORD: ner_secret_2026
+      POSTGRES_DB: ner_logistics
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgis_data:/var/lib/postgresql/data
+      # init-db.sql is executed only on first cluster initialization.
+      - ./init-db.sql:/docker-entrypoint-initdb.d/init-db.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ner_admin -d ner_logistics"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - ner_net
+
+  # ---------------------------------------------------------------------------
+  # In-memory cache / pub-sub: Redis
+  # Used for hazard-polygon caching and Socket.IO horizontal scaling adapter.
+  # ---------------------------------------------------------------------------
+  redis:
+    image: redis:7-alpine
+    container_name: ner_redis
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes"]
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - ner_net
+
+  # ---------------------------------------------------------------------------
+  # Node.js / Express API (TypeScript) — core platform gateway.
+  # ---------------------------------------------------------------------------
+  node-api:
+    build:
+      context: ./node-api
+      dockerfile: Dockerfile
+    container_name: ner_node_api
+    restart: unless-stopped
+    depends_on:
+      postgis:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      PORT: 8080
+      DATABASE_URL: postgres://ner_admin:ner_secret_2026@postgis:5432/ner_logistics
+      REDIS_URL: redis://redis:6379
+      AI_SERVICE_URL: http://ai-service:9000
+      CORS_ORIGIN: "*"
+    ports:
+      - "8080:8080"
+    networks:
+      - ner_net
+
+  # ---------------------------------------------------------------------------
+  # Python / FastAPI AI Microservice — landslide risk prediction.
+  # ---------------------------------------------------------------------------
+  ai-service:
+    build:
+      context: ./ai-service
+      dockerfile: Dockerfile
+    container_name: ner_ai_service
+    restart: unless-stopped
+    environment:
+      PYTHONUNBUFFERED: "1"
+    ports:
+      - "9000:9000"
+    networks:
+      - ner_net
+
+volumes:
+  postgis_data:
+  redis_data:
+
+networks:
+  ner_net:
+    driver: bridge

@@ -1,0 +1,15 @@
+# dependencies / build artifacts (regenerable)
+node_modules/
+**/build/
+**/.dart_tool/
+**/.gradle/
+**/dist/
+ai-service/__pycache__/
+ai-service/data/
+# logs & scratch
+*.log
+scratch_*.png
+dump_err.log
+# secrets
+.env
+**/.env

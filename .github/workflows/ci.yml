@@ -1,0 +1,43 @@
+name: CI
+
+on:
+  push:
+    branches: [main, development]
+  pull_request:
+
+jobs:
+  backend:
+    name: Backend (build + test)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: node-api
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+      - name: Type-check / build
+        run: npm run build
+      - name: Test
+        run: npm test
+
+  flutter:
+    name: Flutter apps (analyze)
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        app: [driver-app, saptahara_frontend/saptahara]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+      - name: Get packages
+        run: flutter pub get
+        working-directory: ${{ matrix.app }}
+      - name: Analyze
+        run: flutter analyze
+        working-directory: ${{ matrix.app }}

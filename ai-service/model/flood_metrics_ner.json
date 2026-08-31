@@ -1,0 +1,68 @@
+{
+  "trained_at": "2026-08-31T00:12:44.295086Z",
+  "data_source": "India Flood Inventory (NER states, district-geocoded) (positives) + matched controls; features from Open-Meteo (ERA5 rainfall/soil, elevation->slope)",
+  "n_samples": 252,
+  "n_positive": 132,
+  "n_negative": 120,
+  "features": [
+    "rainfall_mm",
+    "soil_moisture",
+    "elevation",
+    "slope"
+  ],
+  "feature_medians": {
+    "rainfall_mm": 7.25,
+    "soil_moisture": 0.71505,
+    "elevation": 109.0,
+    "slope": 0.4255
+  },
+  "best_model": "random_forest",
+  "models": {
+    "logreg": {
+      "roc_auc": 0.8626,
+      "accuracy": 0.7778,
+      "precision": 0.7714,
+      "recall": 0.8182,
+      "f1": 0.7941,
+      "confusion_matrix": [
+        [
+          22,
+          8
+        ],
+        [
+          6,
+          27
+        ]
+      ],
+      "coefficients": {
+        "rainfall_mm": 0.6114,
+        "soil_moisture": 0.9376,
+        "elevation": -1.3797,
+        "slope": -0.6247
+      }
+    },
+    "random_forest": {
+      "roc_auc": 0.8747,
+      "accuracy": 0.8254,
+      "precision": 0.8056,
+      "recall": 0.8788,
+      "f1": 0.8406,
+      "confusion_matrix": [
+        [
+          23,
+          7
+        ],
+        [
+          4,
+          29
+        ]
+      ],
+      "feature_importance": {
+        "rainfall_mm": 0.133,
+        "soil_moisture": 0.2163,
+        "elevation": 0.4087,
+        "slope": 0.242
+      }
+    }
+  }
+}

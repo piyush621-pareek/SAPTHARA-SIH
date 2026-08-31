@@ -1,0 +1,62 @@
+{
+  "trained_at": "2026-08-31T00:14:33.489292Z",
+  "data_source": "NASA Global Landslide Catalog (NER North-East India) (positives) + matched controls; features from Open-Meteo (ERA5 rainfall/soil, elevation->slope)",
+  "n_samples": 500,
+  "n_positive": 250,
+  "n_negative": 250,
+  "n_train": 375,
+  "n_test": 125,
+  "features": [
+    "rainfall_mm",
+    "soil_moisture"
+  ],
+  "feature_medians": {
+    "rainfall_mm": 9.45,
+    "soil_moisture": 0.70665
+  },
+  "best_model": "logreg",
+  "models": {
+    "logreg": {
+      "roc_auc": 0.8536,
+      "accuracy": 0.784,
+      "precision": 0.7333,
+      "recall": 0.8871,
+      "f1": 0.8029,
+      "confusion_matrix": [
+        [
+          43,
+          20
+        ],
+        [
+          7,
+          55
+        ]
+      ],
+      "coefficients": {
+        "rainfall_mm": 1.1157,
+        "soil_moisture": 1.7539
+      }
+    },
+    "random_forest": {
+      "roc_auc": 0.8484,
+      "accuracy": 0.792,
+      "precision": 0.7432,
+      "recall": 0.8871,
+      "f1": 0.8088,
+      "confusion_matrix": [
+        [
+          44,
+          19
+        ],
+        [
+          7,
+          55
+        ]
+      ],
+      "feature_importance": {
+        "rainfall_mm": 0.4565,
+        "soil_moisture": 0.5435
+      }
+    }
+  }
+}

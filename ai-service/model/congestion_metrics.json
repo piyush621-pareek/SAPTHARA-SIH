@@ -1,0 +1,62 @@
+{
+  "trained_at": "2026-08-30T23:51:11.081482Z",
+  "data_source": "UCI Metro Interstate Traffic Volume (~48k real hourly records)",
+  "n_samples": 48204,
+  "n_positive": 16398,
+  "n_negative": 31806,
+  "features": [
+    "hour",
+    "day_of_week",
+    "is_weekend",
+    "rain_mm"
+  ],
+  "feature_medians": {
+    "hour": 11.0,
+    "day_of_week": 3.0,
+    "is_weekend": 0.0,
+    "rain_mm": 0.0
+  },
+  "best_model": "random_forest",
+  "models": {
+    "logreg": {
+      "roc_auc": 0.6808,
+      "accuracy": 0.6006,
+      "precision": 0.4562,
+      "recall": 0.908,
+      "f1": 0.6073,
+      "confusion_matrix": [
+        [
+          3516,
+          4436
+        ],
+        [
+          377,
+          3722
+        ]
+      ]
+    },
+    "random_forest": {
+      "roc_auc": 0.9729,
+      "accuracy": 0.9208,
+      "precision": 0.8514,
+      "recall": 0.9295,
+      "f1": 0.8887,
+      "confusion_matrix": [
+        [
+          7287,
+          665
+        ],
+        [
+          289,
+          3810
+        ]
+      ],
+      "feature_importance": {
+        "hour": 0.7761,
+        "day_of_week": 0.1292,
+        "is_weekend": 0.0823,
+        "rain_mm": 0.0124
+      }
+    }
+  }
+}
