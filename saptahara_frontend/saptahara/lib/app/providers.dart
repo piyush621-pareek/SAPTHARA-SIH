@@ -72,9 +72,10 @@ class RoutesController extends StateNotifier<AsyncValue<List<RouteOption>>> {
     }
   }
 
-  /// Plan a hazard-aware route between two user-chosen points.
+  /// Plan a hazard-aware route between two user-chosen points. Does NOT emit a
+  /// loading state (that would unmount the planner and reset its dropdowns);
+  /// it keeps the current routes visible until the new ones arrive.
   Future<void> planRoute(double oLat, double oLng, double dLat, double dLng) async {
-    state = const AsyncValue.loading();
     try {
       state = AsyncValue.data(await _repo.plan(oLat, oLng, dLat, dLng));
     } catch (e, st) {

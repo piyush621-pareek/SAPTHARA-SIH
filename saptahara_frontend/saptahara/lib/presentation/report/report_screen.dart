@@ -4,10 +4,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:uuid/uuid.dart';
 import 'package:intl/intl.dart';
-import 'package:saptahara/app/providers.dart';
+import 'package:saptahara/app/providers.dart' hide LocationPermission;
 import 'package:saptahara/core/theme/app_theme.dart';
 import 'package:saptahara/core/i18n/i18n.dart';
 import 'package:saptahara/core/geo/places.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:saptahara/core/location/location_service.dart';
 import 'package:saptahara/core/connectivity/connectivity_provider.dart';
 import 'package:saptahara/domain/entities/entities.dart';
@@ -31,6 +32,49 @@ class _ReportScreenState extends ConsumerState<ReportScreen> {
   String? _photoPath; // local path to the captured/selected geo-tagged photo
   double _lat = 25.45;
   double _lng = 93.02;
+  bool _locating = false;
+
+  /// Fetch the real GPS position with clear feedback (fixes 'not working').
+  Future<void> _useGps() async {
+    setState(() => _locating = true);
+    String? msg;
+    try {
+      if (!await Geolocator.isLocationServiceEnabled()) {
+        await Geolocator.openLocationSettings();
+        msg = 'Please turn on location (GPS) and try again.';
+      } else {
+        var perm = await Geolocator.checkPermission();
+        if (perm == LocationPermission.denied) {
+          perm = await Geolocator.requestPermission();
+        }
+        if (perm == LocationPermission.deniedForever) {
+          await Geolocator.openAppSettings();
+          msg = 'Location permission is blocked — enable it in Settings.';
+        } else if (perm == LocationPermission.denied) {
+          msg = 'Location permission denied.';
+        } else {
+          final pos = await Geolocator.getCurrentPosition(
+            locationSettings: const LocationSettings(accuracy: LocationAccuracy.high, timeLimit: Duration(seconds: 12)),
+          );
+          if (mounted) {
+            setState(() {
+              _lat = pos.latitude;
+              _lng = pos.longitude;
+            });
+            msg = 'Location set: ${Places.name(pos.latitude, pos.longitude)}';
+          }
+        }
+      }
+    } catch (_) {
+      msg = 'Could not get location. Move to open sky and retry.';
+    }
+    if (mounted) {
+      setState(() => _locating = false);
+      if (msg != null) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
+      }
+    }
+  }
 
   /// Index of the NER place nearest the current coordinates (for the picker).
   int _nearestPlaceIndex() {
@@ -237,18 +281,12 @@ class _ReportScreenState extends ConsumerState<ReportScreen> {
                         ),
                         const SizedBox(height: 8),
                         OutlinedButton.icon(
-                          onPressed: () async {
-                            final pos = await LocationService.instance.rawPosition();
-                            if (pos != null && mounted) {
-                              setState(() {
-                                _lat = pos.latitude;
-                                _lng = pos.longitude;
-                              });
-                            }
-                          },
-                          icon: const Icon(Icons.my_location, size: 18, color: AppColors.black),
-                          label: const Text('Use my current location (GPS)',
-                              style: TextStyle(color: AppColors.black, fontWeight: FontWeight.w700)),
+                          onPressed: _locating ? null : _useGps,
+                          icon: _locating
+                              ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.black))
+                              : const Icon(Icons.my_location, size: 18, color: AppColors.black),
+                          label: Text(_locating ? 'Getting location…' : 'Use my current location (GPS)',
+                              style: const TextStyle(color: AppColors.black, fontWeight: FontWeight.w700)),
                           style: OutlinedButton.styleFrom(
                             minimumSize: const Size.fromHeight(44),
                             side: const BorderSide(color: AppColors.black, width: 1.5),

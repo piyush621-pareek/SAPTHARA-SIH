@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:saptahara/app/providers.dart';
+import 'package:saptahara/app/auth.dart';
 import 'package:saptahara/core/i18n/i18n.dart';
 import 'package:saptahara/core/device/battery_provider.dart';
 import 'package:saptahara/core/storage/local_store.dart';
@@ -123,6 +124,20 @@ class ProfileScreen extends ConsumerWidget {
               Text(AppStrings.t('verificationTrust', lang), style: Theme.of(context).textTheme.titleLarge),
               const SizedBox(height: 10),
               _VerificationCard(reportId: reports.isNotEmpty ? reports.first.id : null),
+              const SizedBox(height: 24),
+              SizedBox(
+                height: 50,
+                child: OutlinedButton.icon(
+                  onPressed: () => ref.read(authProvider.notifier).logout(),
+                  icon: const Icon(Icons.logout, color: AppColors.riskyRed),
+                  label: Text(AppStrings.t('logout', lang),
+                      style: const TextStyle(color: AppColors.riskyRed, fontWeight: FontWeight.w900)),
+                  style: OutlinedButton.styleFrom(
+                    side: const BorderSide(color: AppColors.riskyRed, width: 1.8),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadii.card)),
+                  ),
+                ),
+              ),
             ],
           ),
           loading: () => const Center(child: CircularProgressIndicator()),

@@ -8,6 +8,13 @@ import 'package:saptahara/domain/entities/entities.dart';
 import 'package:saptahara/presentation/widgets/app_card.dart';
 import 'package:saptahara/presentation/widgets/live_map.dart';
 import 'package:saptahara/presentation/widgets/offline_banner.dart';
+import 'package:saptahara/presentation/route/fullscreen_map.dart';
+
+// Persisted From/To selection for the planner (survives list rebuilds).
+final routeFromProvider =
+    StateProvider<int>((ref) => Places.all.indexWhere((p) => p.name == 'Guwahati'));
+final routeToProvider =
+    StateProvider<int>((ref) => Places.all.indexWhere((p) => p.name == 'Tawang'));
 
 class RouteScreen extends ConsumerWidget {
   const RouteScreen({super.key});
@@ -42,11 +49,33 @@ class RouteScreen extends ConsumerWidget {
                       const SizedBox(height: 12),
                       AppCard(
                         padding: const EdgeInsets.all(10),
-                        child: LiveMap(
-                          routes: routes,
-                          highlightedRouteId: selected.id,
-                          geofence: fence,
-                          style: mapStyle,
+                        child: Stack(
+                          children: [
+                            LiveMap(
+                              routes: routes,
+                              highlightedRouteId: selected.id,
+                              geofence: fence,
+                              style: mapStyle,
+                            ),
+                            Positioned(
+                              right: 6,
+                              top: 6,
+                              child: Material(
+                                color: AppColors.white,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                  side: const BorderSide(color: AppColors.black, width: 1.6),
+                                ),
+                                child: IconButton(
+                                  tooltip: 'Full screen',
+                                  icon: const Icon(Icons.fullscreen, color: AppColors.black),
+                                  onPressed: () => Navigator.of(context).push(
+                                    MaterialPageRoute(builder: (_) => const FullscreenMapScreen()),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                       const SizedBox(height: 14),
@@ -212,27 +241,25 @@ class _RoutePlanner extends ConsumerStatefulWidget {
 }
 
 class _RoutePlannerState extends ConsumerState<_RoutePlanner> {
-  late int _from = _indexOf('Guwahati');
-  late int _to = _indexOf('Tawang');
-
-  int _indexOf(String name) {
-    final list = Places.all;
-    final i = list.indexWhere((p) => p.name == name);
-    return i >= 0 ? i : 0;
-  }
+  bool _busy = false;
 
   Future<void> _find() async {
     final list = Places.all;
-    final o = list[_from], d = list[_to];
+    final o = list[ref.read(routeFromProvider)];
+    final d = list[ref.read(routeToProvider)];
+    setState(() => _busy = true);
     await ref
         .read(routesControllerProvider.notifier)
         .planRoute(o.lat, o.lng, d.lat, d.lng);
+    if (mounted) setState(() => _busy = false);
   }
 
   @override
   Widget build(BuildContext context) {
     final places = Places.all;
     final lang = ref.watch(languageProvider);
+    final from = ref.watch(routeFromProvider);
+    final to = ref.watch(routeToProvider);
     return AppCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -246,17 +273,37 @@ class _RoutePlannerState extends ConsumerState<_RoutePlanner> {
             ],
           ),
           const SizedBox(height: 10),
-          _picker(Icons.my_location_rounded, AppStrings.t('fromLabel', lang), _from,
-              (v) => setState(() => _from = v), places),
+          _picker(Icons.my_location_rounded, AppStrings.t('fromLabel', lang), from,
+              (v) => ref.read(routeFromProvider.notifier).state = v, places),
           const SizedBox(height: 8),
-          _picker(Icons.place_rounded, AppStrings.t('toLabel', lang), _to,
-              (v) => setState(() => _to = v), places),
+          _picker(Icons.place_rounded, AppStrings.t('toLabel', lang), to,
+              (v) => ref.read(routeToProvider.notifier).state = v, places),
+          const SizedBox(height: 10),
+          // Clear confirmation of the chosen origin -> destination.
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+            decoration: BoxDecoration(
+              color: AppColors.panelBlue,
+              borderRadius: BorderRadius.circular(AppRadii.cardSm),
+              border: Border.all(color: AppColors.black, width: 1.4),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Flexible(child: Text(places[from].name, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w800))),
+                const Padding(padding: EdgeInsets.symmetric(horizontal: 8), child: Icon(Icons.arrow_forward, size: 16)),
+                Flexible(child: Text(places[to].name, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w800))),
+              ],
+            ),
+          ),
           const SizedBox(height: 10),
           SizedBox(
             height: 46,
             child: ElevatedButton.icon(
-              onPressed: _from == _to ? null : _find,
-              icon: const Icon(Icons.search_rounded, color: AppColors.white, size: 18),
+              onPressed: (from == to || _busy) ? null : _find,
+              icon: _busy
+                  ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.white))
+                  : const Icon(Icons.search_rounded, color: AppColors.white, size: 18),
               label: Text(AppStrings.t('findRoute', lang),
                   style: const TextStyle(color: AppColors.white, fontWeight: FontWeight.w900)),
               style: ElevatedButton.styleFrom(
