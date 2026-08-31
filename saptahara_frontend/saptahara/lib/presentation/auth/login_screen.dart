@@ -50,12 +50,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                const Icon(Icons.shield_moon_rounded, size: 56, color: AppColors.safeGreen),
+                Image.asset('assets/images/logo.png',
+                    height: 88, fit: BoxFit.contain,
+                    errorBuilder: (_, __, ___) =>
+                        const Icon(Icons.shield_moon_rounded, size: 56, color: AppColors.safeGreen)),
                 const SizedBox(height: 12),
-                Text("SAPTHARA",
-                    textAlign: TextAlign.center,
-                    style: Theme.of(context).textTheme.headlineMedium),
-                const SizedBox(height: 4),
                 const Text("NER Logistics — Driver & Field Officer",
                     textAlign: TextAlign.center,
                     style: TextStyle(color: AppColors.black)),

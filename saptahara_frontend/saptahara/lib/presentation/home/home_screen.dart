@@ -31,7 +31,9 @@ class HomeScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('SAPTHARA'),
+        title: Image.asset('assets/images/logo.png',
+            height: 34, fit: BoxFit.contain,
+            errorBuilder: (_, __, ___) => const Text('SAPTHARA')),
         actions: [
           Padding(
             padding: const EdgeInsets.only(right: 16),
