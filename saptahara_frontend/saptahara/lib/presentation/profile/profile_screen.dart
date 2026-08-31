@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:saptahara/app/providers.dart';
 import 'package:saptahara/core/i18n/i18n.dart';
+import 'package:saptahara/core/device/battery_provider.dart';
 import 'package:saptahara/core/theme/app_theme.dart';
 import 'package:saptahara/domain/entities/entities.dart';
 import 'package:saptahara/presentation/widgets/app_card.dart';
@@ -61,10 +62,30 @@ class ProfileScreen extends ConsumerWidget {
               AppCard(
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceAround,
-                  children: const [
-                    _DeviceStatusChip(icon: Icons.gps_fixed, label: 'GPS', ok: true),
-                    _DeviceStatusChip(icon: Icons.camera_alt, label: 'Camera', ok: true),
-                    _DeviceStatusChip(icon: Icons.battery_5_bar, label: 'Battery 74%', ok: true),
+                  children: [
+                    _DeviceStatusChip(
+                      icon: ref.watch(locationPermissionProvider) == LocationPermission.granted
+                          ? Icons.gps_fixed
+                          : Icons.gps_off,
+                      label: 'GPS',
+                      ok: ref.watch(locationPermissionProvider) == LocationPermission.granted,
+                    ),
+                    const _DeviceStatusChip(icon: Icons.camera_alt, label: 'Camera', ok: true),
+                    ref.watch(batteryLevelProvider).when(
+                          data: (pct) => _DeviceStatusChip(
+                            icon: pct >= 80
+                                ? Icons.battery_full
+                                : pct >= 40
+                                    ? Icons.battery_5_bar
+                                    : Icons.battery_alert,
+                            label: 'Battery $pct%',
+                            ok: pct >= 20,
+                          ),
+                          loading: () => const _DeviceStatusChip(
+                              icon: Icons.battery_unknown, label: 'Battery …', ok: true),
+                          error: (_, __) => const _DeviceStatusChip(
+                              icon: Icons.battery_unknown, label: 'Battery —', ok: true),
+                        ),
                   ],
                 ),
               ),

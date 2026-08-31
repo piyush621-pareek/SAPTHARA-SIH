@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:geolocator/geolocator.dart' as geo;
 import 'package:saptahara/app/providers.dart';
 import 'package:saptahara/core/network/api_config.dart';
 import 'package:saptahara/core/theme/app_theme.dart';
@@ -198,7 +199,23 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     children: [
                       Expanded(
                         child: OutlinedButton(
-                          onPressed: () => ref.read(locationPermissionProvider.notifier).state = LocationPermission.granted,
+                          onPressed: () async {
+                            // Real Android permission + GPS-service request.
+                            if (!await geo.Geolocator.isLocationServiceEnabled()) {
+                              await geo.Geolocator.openLocationSettings();
+                            }
+                            var perm = await geo.Geolocator.checkPermission();
+                            if (perm == geo.LocationPermission.denied) {
+                              perm = await geo.Geolocator.requestPermission();
+                            }
+                            if (perm == geo.LocationPermission.deniedForever) {
+                              await geo.Geolocator.openAppSettings();
+                            }
+                            final ok = perm == geo.LocationPermission.always ||
+                                perm == geo.LocationPermission.whileInUse;
+                            ref.read(locationPermissionProvider.notifier).state =
+                                ok ? LocationPermission.granted : LocationPermission.denied;
+                          },
                           style: OutlinedButton.styleFrom(
                             side: const BorderSide(color: AppColors.black, width: 1.8),
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadii.cardSm)),

@@ -8,6 +8,7 @@ import 'package:saptahara/app/providers.dart';
 import 'package:saptahara/core/theme/app_theme.dart';
 import 'package:saptahara/core/i18n/i18n.dart';
 import 'package:saptahara/core/geo/places.dart';
+import 'package:saptahara/core/location/location_service.dart';
 import 'package:saptahara/core/connectivity/connectivity_provider.dart';
 import 'package:saptahara/domain/entities/entities.dart';
 import 'package:saptahara/presentation/widgets/app_card.dart';
@@ -30,6 +31,22 @@ class _ReportScreenState extends ConsumerState<ReportScreen> {
   String? _photoPath; // local path to the captured/selected geo-tagged photo
   double _lat = 25.45;
   double _lng = 93.02;
+
+  /// Index of the NER place nearest the current coordinates (for the picker).
+  int _nearestPlaceIndex() {
+    final places = Places.all;
+    var best = 0;
+    var bestD = double.infinity;
+    for (var i = 0; i < places.length; i++) {
+      final dLat = places[i].lat - _lat, dLng = places[i].lng - _lng;
+      final d = dLat * dLat + dLng * dLng;
+      if (d < bestD) {
+        bestD = d;
+        best = i;
+      }
+    }
+    return best;
+  }
 
   Future<void> _capturePhoto(ImageSource source) async {
     try {
@@ -194,22 +211,47 @@ class _ReportScreenState extends ConsumerState<ReportScreen> {
                         const SizedBox(height: 14),
                         Text('Location', style: Theme.of(context).textTheme.titleMedium),
                         const SizedBox(height: 6),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                          decoration: BoxDecoration(
-                            color: AppColors.safeGreen.withOpacity(0.12),
-                            borderRadius: BorderRadius.circular(10),
-                            border: Border.all(color: AppColors.black, width: 1.4),
+                        // Pick the place by name (sets the coordinates for you).
+                        DropdownButtonFormField<int>(
+                          isExpanded: true,
+                          value: _nearestPlaceIndex(),
+                          decoration: InputDecoration(
+                            labelText: 'Place',
+                            prefixIcon: const Icon(Icons.place, size: 20),
+                            isDense: true,
+                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
                           ),
-                          child: Row(
-                            children: [
-                              const Icon(Icons.place, size: 18, color: AppColors.black),
-                              const SizedBox(width: 8),
-                              Expanded(
-                                child: Text(Places.name(_lat, _lng),
-                                    style: const TextStyle(fontWeight: FontWeight.w800)),
-                              ),
-                            ],
+                          items: [
+                            for (var i = 0; i < Places.all.length; i++)
+                              DropdownMenuItem(value: i, child: Text(Places.all[i].name)),
+                          ],
+                          onChanged: (i) {
+                            if (i != null) {
+                              final p = Places.all[i];
+                              setState(() {
+                                _lat = p.lat;
+                                _lng = p.lng;
+                              });
+                            }
+                          },
+                        ),
+                        const SizedBox(height: 8),
+                        OutlinedButton.icon(
+                          onPressed: () async {
+                            final pos = await LocationService.instance.rawPosition();
+                            if (pos != null && mounted) {
+                              setState(() {
+                                _lat = pos.latitude;
+                                _lng = pos.longitude;
+                              });
+                            }
+                          },
+                          icon: const Icon(Icons.my_location, size: 18, color: AppColors.black),
+                          label: const Text('Use my current location (GPS)',
+                              style: TextStyle(color: AppColors.black, fontWeight: FontWeight.w700)),
+                          style: OutlinedButton.styleFrom(
+                            minimumSize: const Size.fromHeight(44),
+                            side: const BorderSide(color: AppColors.black, width: 1.5),
                           ),
                         ),
                         const SizedBox(height: 8),
