@@ -11,6 +11,7 @@ import 'package:saptahara/presentation/report/report_screen.dart';
 import 'package:saptahara/presentation/settings/settings_screen.dart';
 import 'package:saptahara/presentation/profile/profile_screen.dart';
 import 'package:saptahara/presentation/widgets/alert_toast.dart';
+import 'package:saptahara/presentation/widgets/update_banner.dart';
 
 /// Persistent tab index — shared so screens (e.g. Home's recommendation
 /// card) can programmatically jump to another tab.
@@ -68,7 +69,12 @@ class AppShell extends ConsumerWidget {
     });
 
     return Scaffold(
-      body: IndexedStack(index: index, children: _screens),
+      body: Column(
+        children: [
+          const UpdateBanner(),
+          Expanded(child: IndexedStack(index: index, children: _screens)),
+        ],
+      ),
       bottomNavigationBar: Container(
         decoration: const BoxDecoration(
           color: AppColors.limeNav,

@@ -1,3 +1,4 @@
+import path from "path";
 import express, { Application, Request, Response } from "express";
 import helmet from "helmet";
 import cors from "cors";
@@ -22,6 +23,10 @@ export function createApp(): Application {
   app.use(express.json({ limit: "5mb" })); // batch telemetry can be large
   app.use(express.urlencoded({ extended: true }));
   app.use(morgan(isProd ? "combined" : "dev"));
+
+  // Static hosting for the downloadable APK (in-app self-update). Drop the
+  // release build at node-api/public/saptahara.apk -> served at /downloads/.
+  app.use("/downloads", express.static(path.join(process.cwd(), "public")));
 
   // --- Rate limiting ---
   // Global cap protects the API; telemetry ingest is high-volume from many

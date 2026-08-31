@@ -21,6 +21,7 @@ dependencies:
   # --- Device capabilities ---
   geolocator: ^13.0.1
   shared_preferences: ^2.3.2
+  url_launcher: ^6.3.0 # open the APK download for in-app self-update
   image_picker: ^1.1.2
   flutter_local_notifications: ^17.2.3
   flutter_localizations:
