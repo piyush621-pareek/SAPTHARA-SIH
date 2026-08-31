@@ -73,6 +73,126 @@ class AppStrings {
       'as': 'প্ৰতিবেদন ছেভ কৰক',
       'bn': 'রিপোর্ট সংরক্ষণ'
     },
+    'streamingLive': {
+      'en': 'Streaming live to dispatch',
+      'hi': 'डिस्पैच को लाइव भेजा जा रहा है',
+      'as': 'ডিছপেচলৈ জীৱন্ত পঠিওৱা হৈছে',
+      'bn': 'ডিসপ্যাচে লাইভ পাঠানো হচ্ছে'
+    },
+    'tapToGoOnline': {
+      'en': 'Tap to go online',
+      'hi': 'ऑनलाइन होने के लिए टैप करें',
+      'as': 'অনলাইন হ’বলৈ টিপক',
+      'bn': 'অনলাইন হতে ট্যাপ করুন'
+    },
+    'satelliteRisk': {
+      'en': 'Satellite Landslide Risk (ISRO)',
+      'hi': 'सैटेलाइट भूस्खलन जोखिम (इसरो)',
+      'as': 'উপগ্ৰহ ভূমিস্খলন বিপদ (ইছৰো)',
+      'bn': 'স্যাটেলাইট ভূমিধস ঝুঁকি (ইসরো)'
+    },
+    'takeRecommended': {
+      'en': 'Take Recommended (Safest)',
+      'hi': 'अनुशंसित लें (सबसे सुरक्षित)',
+      'as': 'অনুমোদিত লওক (সবাতোকৈ সুৰক্ষিত)',
+      'bn': 'প্রস্তাবিত নিন (সবচেয়ে নিরাপদ)'
+    },
+    'failedRoutes': {
+      'en': 'Failed to load routes',
+      'hi': 'मार्ग लोड करने में विफल',
+      'as': 'পথ ল’ড কৰাত ব্যৰ্থ',
+      'bn': 'রুট লোড করতে ব্যর্থ'
+    },
+    'failedAlerts': {
+      'en': 'Failed to load alerts',
+      'hi': 'अलर्ट लोड करने में विफल',
+      'as': 'সতৰ্কবাণী ল’ড কৰাত ব্যৰ্থ',
+      'bn': 'সতর্কতা লোড করতে ব্যর্থ'
+    },
+    'availableRoutes': {
+      'en': 'Available Routes',
+      'hi': 'उपलब्ध मार्ग',
+      'as': 'উপলব্ধ পথ',
+      'bn': 'উপলব্ধ রুট'
+    },
+    'reportType': {
+      'en': 'Report Type',
+      'hi': 'रिपोर्ट प्रकार',
+      'as': 'প্ৰতিবেদনৰ ধৰণ',
+      'bn': 'রিপোর্টের ধরন'
+    },
+    'description': {
+      'en': 'Description',
+      'hi': 'विवरण',
+      'as': 'বিৱৰণ',
+      'bn': 'বিবরণ'
+    },
+    'connectivity': {
+      'en': 'Connectivity',
+      'hi': 'कनेक्टिविटी',
+      'as': 'সংযোগ',
+      'bn': 'সংযোগ'
+    },
+    'offlineMode': {
+      'en': 'Offline Mode',
+      'hi': 'ऑफ़लाइन मोड',
+      'as': 'অফলাইন ম’ড',
+      'bn': 'অফলাইন মোড'
+    },
+    'dataSync': {
+      'en': 'Data Sync',
+      'hi': 'डेटा सिंक',
+      'as': 'ডেটা ছিংক',
+      'bn': 'ডেটা সিঙ্ক'
+    },
+    'syncNow': {
+      'en': 'SYNC NOW',
+      'hi': 'अभी सिंक करें',
+      'as': 'এতিয়াই ছিংক কৰক',
+      'bn': 'এখনই সিঙ্ক করুন'
+    },
+    'notificationsTitle': {
+      'en': 'Notifications',
+      'hi': 'सूचनाएं',
+      'as': 'জাননী',
+      'bn': 'বিজ্ঞপ্তি'
+    },
+    'mapStyle': {
+      'en': 'Map Style',
+      'hi': 'मानचित्र शैली',
+      'as': 'মানচিত্ৰ শৈলী',
+      'bn': 'মানচিত্র শৈলী'
+    },
+    'locationPermission': {
+      'en': 'Location Permission',
+      'hi': 'स्थान अनुमति',
+      'as': 'অৱস্থানৰ অনুমতি',
+      'bn': 'অবস্থানের অনুমতি'
+    },
+    'privacySecurity': {
+      'en': 'Privacy & Security',
+      'hi': 'गोपनीयता और सुरक्षा',
+      'as': 'গোপনীয়তা আৰু সুৰক্ষা',
+      'bn': 'গোপনীয়তা ও নিরাপত্তা'
+    },
+    'profileTitle': {
+      'en': 'Profile',
+      'hi': 'प्रोफ़ाइल',
+      'as': 'প্ৰ’ফাইল',
+      'bn': 'প্রোফাইল'
+    },
+    'reportsFiled': {
+      'en': 'Reports filed',
+      'hi': 'दर्ज रिपोर्ट',
+      'as': 'দাখিল কৰা প্ৰতিবেদন',
+      'bn': 'দাখিল করা রিপোর্ট'
+    },
+    'logout': {
+      'en': 'Log out',
+      'hi': 'लॉग आउट',
+      'as': 'লগ আউট',
+      'bn': 'লগ আউট'
+    },
   };
 
   static String t(String key, String lang) =>

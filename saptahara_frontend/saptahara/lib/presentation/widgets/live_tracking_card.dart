@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:saptahara/app/telemetry.dart';
+import 'package:saptahara/core/i18n/i18n.dart';
 import 'package:saptahara/core/theme/app_theme.dart';
 import 'package:saptahara/presentation/widgets/app_card.dart';
 
@@ -12,13 +13,16 @@ class LiveTrackingCard extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final t = ref.watch(telemetryProvider);
+    final lang = ref.watch(languageProvider);
     final subtitle = t.streaming
         ? (t.pending > 0
             ? 'Streaming · ${t.pending} cached (syncing)'
             : t.lastOk
-                ? 'Streaming live to dispatch'
+                ? AppStrings.t('streamingLive', lang)
                 : 'Streaming · retrying…')
-        : (t.pending > 0 ? '${t.pending} points cached offline' : 'Tracking off');
+        : (t.pending > 0
+            ? '${t.pending} points cached offline'
+            : AppStrings.t('tapToGoOnline', lang));
 
     return AppCard(
       child: Row(
@@ -41,8 +45,8 @@ class LiveTrackingCard extends ConsumerWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text('Live Tracking',
-                    style: TextStyle(fontWeight: FontWeight.w900, fontSize: 15)),
+                Text(AppStrings.t('liveTracking', lang),
+                    style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 15)),
                 Text(subtitle,
                     style: const TextStyle(fontSize: 12, color: AppColors.black)),
               ],

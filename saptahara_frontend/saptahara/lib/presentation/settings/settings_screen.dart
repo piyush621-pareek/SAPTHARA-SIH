@@ -125,7 +125,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               ),
             ),
             const SizedBox(height: 12),
-            _sectionTitle(context, 'Connectivity'),
+            _sectionTitle(context, AppStrings.t('connectivity', ref.watch(languageProvider))),
             AppCard(
               child: SwitchListTile(
                 contentPadding: EdgeInsets.zero,
@@ -167,7 +167,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               ),
             ),
             const SizedBox(height: 20),
-            _sectionTitle(context, 'Notifications'),
+            _sectionTitle(context, AppStrings.t('notificationsTitle', ref.watch(languageProvider))),
             AppCard(
               child: SwitchListTile(
                 contentPadding: EdgeInsets.zero,
@@ -179,7 +179,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               ),
             ),
             const SizedBox(height: 20),
-            _sectionTitle(context, 'Location Permission'),
+            _sectionTitle(context, AppStrings.t('locationPermission', ref.watch(languageProvider))),
             AppCard(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -222,7 +222,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               ),
             ),
             const SizedBox(height: 20),
-            _sectionTitle(context, 'Map Style'),
+            _sectionTitle(context, AppStrings.t('mapStyle', ref.watch(languageProvider))),
             AppCard(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -239,7 +239,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               ),
             ),
             const SizedBox(height: 20),
-            _sectionTitle(context, 'Privacy & Security'),
+            _sectionTitle(context, AppStrings.t('privacySecurity', ref.watch(languageProvider))),
             AppCard(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,

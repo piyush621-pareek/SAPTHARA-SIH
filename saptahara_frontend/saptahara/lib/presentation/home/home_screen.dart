@@ -27,6 +27,7 @@ class HomeScreen extends ConsumerWidget {
     final liveStatus = ref.watch(liveStatusProvider);
     final mapStyle = ref.watch(mapStyleProvider);
     final focus = ref.watch(focusedAlertProvider);
+    final lang = ref.watch(languageProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -71,9 +72,9 @@ class HomeScreen extends ConsumerWidget {
                       ),
                       error: (e, st) => AppCard(
                         color: AppColors.riskyRed.withOpacity(0.1),
-                        child: const SizedBox(
+                        child: SizedBox(
                           height: 120,
-                          child: Center(child: Text('Failed to load routes')),
+                          child: Center(child: Text(AppStrings.t('failedRoutes', lang))),
                         ),
                       ),
                     ),
@@ -96,7 +97,7 @@ class HomeScreen extends ConsumerWidget {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    'Take ${recommended.name} (Safest)',
+                                    '${AppStrings.t('takeRecommended', lang)} · ${recommended.name}',
                                     style: const TextStyle(
                                       color: AppColors.white,
                                       fontWeight: FontWeight.w900,
@@ -142,7 +143,7 @@ class HomeScreen extends ConsumerWidget {
                         );
                       },
                       loading: () => const Center(child: CircularProgressIndicator()),
-                      error: (e, st) => const Text('Failed to load alerts'),
+                      error: (e, st) => Text(AppStrings.t('failedAlerts', lang)),
                     ),
                     const SizedBox(height: 8),
                     SosButton(onPressed: () => showSosFlow(context, ref)),

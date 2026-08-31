@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:saptahara/app/providers.dart';
+import 'package:saptahara/core/i18n/i18n.dart';
 import 'package:saptahara/core/theme/app_theme.dart';
 import 'package:saptahara/domain/entities/entities.dart';
 import 'package:saptahara/presentation/widgets/app_card.dart';
@@ -16,9 +17,10 @@ class RouteScreen extends ConsumerWidget {
     final selectedId = ref.watch(selectedRouteIdProvider);
     final mapStyle = ref.watch(mapStyleProvider);
     final geofenceRepo = ref.watch(geofenceRepositoryProvider);
+    final lang = ref.watch(languageProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Route')),
+      appBar: AppBar(title: Text(AppStrings.t('navRoute', lang))),
       body: SafeArea(
         child: Column(
           children: [
@@ -72,7 +74,7 @@ class RouteScreen extends ConsumerWidget {
                       const SizedBox(height: 16),
                       const _Legend(),
                       const SizedBox(height: 12),
-                      Text('Available Routes', style: Theme.of(context).textTheme.titleLarge),
+                      Text(AppStrings.t('availableRoutes', lang), style: Theme.of(context).textTheme.titleLarge),
                       const SizedBox(height: 10),
                       ...routes.map((r) => _RouteRow(
                             route: r,
@@ -83,7 +85,7 @@ class RouteScreen extends ConsumerWidget {
                   );
                 },
                 loading: () => const Center(child: CircularProgressIndicator()),
-                error: (e, st) => const Center(child: Text('Failed to load routes')),
+                error: (e, st) => Center(child: Text(AppStrings.t('failedRoutes', lang))),
               ),
             ),
           ],
