@@ -4,9 +4,14 @@ import 'package:intl/intl.dart';
 import 'package:saptahara/app/providers.dart';
 import 'package:saptahara/core/i18n/i18n.dart';
 import 'package:saptahara/core/device/battery_provider.dart';
+import 'package:saptahara/core/storage/local_store.dart';
 import 'package:saptahara/core/theme/app_theme.dart';
 import 'package:saptahara/domain/entities/entities.dart';
 import 'package:saptahara/presentation/widgets/app_card.dart';
+
+/// User's editable display name (persisted locally, overrides the seeded name).
+final editableNameProvider =
+    StateProvider<String?>((ref) => LocalStore.getString('display_name'));
 
 class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
@@ -44,11 +49,17 @@ class ProfileScreen extends ConsumerWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(user.name, style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 17)),
+                          Text(ref.watch(editableNameProvider) ?? user.name,
+                              style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 17)),
                           const SizedBox(height: 2),
                           Text(user.role, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 12.5)),
                         ],
                       ),
+                    ),
+                    IconButton(
+                      tooltip: 'Edit profile',
+                      icon: const Icon(Icons.edit, color: AppColors.black),
+                      onPressed: () => _editName(context, ref, ref.read(editableNameProvider) ?? user.name),
                     ),
                   ],
                 ),
@@ -117,6 +128,39 @@ class ProfileScreen extends ConsumerWidget {
           loading: () => const Center(child: CircularProgressIndicator()),
           error: (e, st) => const Center(child: Text('Failed to load profile')),
         ),
+      ),
+    );
+  }
+
+  /// Edit-profile dialog: change the display name (saved on the device).
+  void _editName(BuildContext context, WidgetRef ref, String current) {
+    final controller = TextEditingController(text: current);
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Edit Profile'),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          decoration: const InputDecoration(
+            labelText: 'Display name',
+            border: OutlineInputBorder(),
+          ),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+          ElevatedButton(
+            onPressed: () async {
+              final name = controller.text.trim();
+              if (name.isNotEmpty) {
+                await LocalStore.setString('display_name', name);
+                ref.read(editableNameProvider.notifier).state = name;
+              }
+              if (ctx.mounted) Navigator.pop(ctx);
+            },
+            child: const Text('Save'),
+          ),
+        ],
       ),
     );
   }
