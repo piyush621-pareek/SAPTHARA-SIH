@@ -45,6 +45,8 @@ export default function App() {
     Array<{ id: string; latitude: number; longitude: number }>
   >([]);
   const [connected, setConnected] = useState(false);
+  // Which slide-in panel is shown on narrow / mobile screens.
+  const [mobilePanel, setMobilePanel] = useState<"fleet" | "ops" | null>(null);
   const [focus, setFocus] = useState<{
     longitude: number;
     latitude: number;
@@ -280,6 +282,23 @@ export default function App() {
   const breachCount = feed.filter((f) => f.kind === "breach").length;
   const delayedCount = connectivity?.summary.delayed ?? 0;
 
+  // Live per-vehicle status (by registration) derived from the recent alert
+  // feed + connectivity, so the fleet list can show a colour-coded state.
+  const statusByReg: Record<string, "sos" | "breach" | "delayed"> = {};
+  for (const f of feed) {
+    const cur = statusByReg[f.vehicle];
+    if (f.kind === "sos") statusByReg[f.vehicle] = "sos";
+    else if (f.kind === "breach" && cur !== "sos") statusByReg[f.vehicle] = "breach";
+    else if (f.kind === "delivery" && !cur) statusByReg[f.vehicle] = "delayed";
+  }
+  if (connectivity) {
+    for (const d of connectivity.deliveries) {
+      if (d.status === "delayed" && !statusByReg[d.registration]) {
+        statusByReg[d.registration] = "delayed";
+      }
+    }
+  }
+
   return (
     <div className="app">
       <StatBar
@@ -290,9 +309,22 @@ export default function App() {
         breachCount={breachCount}
         sosCount={sosCount}
         delayedCount={delayedCount}
+        onMenuToggle={() =>
+          setMobilePanel((m) => (m === "fleet" ? null : "fleet"))
+        }
       />
       <div className="workspace">
-        <FleetSidebar fleet={fleet} positions={positions} onFocus={focusOn} />
+        <div className={`mobile-panel fleet-slot ${mobilePanel === "fleet" ? "open" : ""}`}>
+          <FleetSidebar
+            fleet={fleet}
+            positions={positions}
+            statusByReg={statusByReg}
+            onFocus={(lng, lat) => {
+              focusOn(lng, lat);
+              setMobilePanel(null);
+            }}
+          />
+        </div>
         <div className="map-wrap">
           <FleetMap
             hazards={hazards}
@@ -329,12 +361,20 @@ export default function App() {
             onClose={() => setSatPoint(null)}
           />
         </div>
-        <div className="right-col">
+        <div className={`right-col mobile-panel ops-slot ${mobilePanel === "ops" ? "open" : ""}`}>
           <AlertsFeed feed={feed} onFocus={focusOn} />
           <ConnectivityPanel data={connectivity} onFocus={focusOn} />
           <LedgerPanel entries={ledger} verify={ledgerVerify} />
         </div>
       </div>
+
+      {/* Mobile-only floating toggle for the alerts / districts column. */}
+      <button
+        className="mobile-fab"
+        onClick={() => setMobilePanel((m) => (m === "ops" ? null : "ops"))}
+      >
+        {mobilePanel === "ops" ? "✕ Close" : "Alerts & Districts"}
+      </button>
     </div>
   );
 }

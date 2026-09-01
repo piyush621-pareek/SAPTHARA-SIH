@@ -320,3 +320,51 @@ button.conn-row:hover { border-color: var(--accent); }
 .hz-label { font-size: 11px; font-weight: 700; color: var(--text); }
 .hz-pct { font-size: 14px; font-weight: 900; }
 .hz-action { font-size: 9px; font-weight: 800; letter-spacing: 0.5px; margin-top: 1px; }
+
+/* ---------- Per-vehicle live status (fleet list) ---------- */
+.fleet-status {
+  margin-left: 8px; font-size: 9px; font-weight: 800; letter-spacing: 0.5px;
+  padding: 2px 6px; border-radius: 6px; text-transform: uppercase; vertical-align: middle;
+}
+.fleet-status.sos { background: rgba(255,45,85,0.18); color: var(--danger); }
+.fleet-status.breach { background: rgba(245,166,35,0.18); color: var(--warn); }
+.fleet-status.delayed { background: rgba(56,189,248,0.15); color: var(--accent); }
+.fleet-row.st-sos { border-left: 3px solid var(--danger); }
+.fleet-row.st-breach { border-left: 3px solid var(--warn); }
+.fleet-row.st-delayed { border-left: 3px solid var(--accent); }
+
+/* ---------- Mobile hamburger + floating panel toggle ---------- */
+.menu-btn {
+  display: none; background: var(--panel-2); border: 1px solid var(--line);
+  color: var(--text); font-size: 18px; line-height: 1; border-radius: 8px;
+  padding: 6px 10px; cursor: pointer; margin-right: 4px;
+}
+.mobile-fab {
+  display: none; position: fixed; bottom: 18px; right: 18px; z-index: 40;
+  background: linear-gradient(135deg, #0b6e4f, #38bdf8); color: #fff;
+  border: none; border-radius: 22px; padding: 12px 18px; font-size: 13px;
+  font-weight: 700; box-shadow: 0 6px 20px rgba(0,0,0,0.4); cursor: pointer;
+}
+
+/* Wrappers stretch their single child panel to fill the grid cell height. */
+.fleet-slot { display: flex; min-height: 0; }
+.fleet-slot > .panel { flex: 1; min-height: 0; }
+
+/* ---------- Responsive: collapse side columns into slide-in panels ---------- */
+@media (max-width: 960px) {
+  .workspace { grid-template-columns: 1fr; }
+  .menu-btn { display: inline-block; }
+  .mobile-fab { display: block; }
+  .stats { gap: 6px; }
+  .stat { min-width: 56px; padding: 5px 8px; }
+  .brand-sub { display: none; }
+
+  .mobile-panel {
+    position: absolute; top: 0; bottom: 0; z-index: 30; width: min(88vw, 340px);
+    display: none !important; box-shadow: 0 0 30px rgba(0,0,0,0.5);
+  }
+  .fleet-slot { left: 0; }
+  .ops-slot { right: 0; }
+  .mobile-panel.open { display: flex !important; flex-direction: column; }
+  .map-wrap { grid-column: 1; }
+}

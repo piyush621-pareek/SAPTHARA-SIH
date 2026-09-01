@@ -6,6 +6,7 @@ interface Props {
   breachCount: number;
   sosCount: number;
   delayedCount: number;
+  onMenuToggle?: () => void;
 }
 
 export default function StatBar({
@@ -16,9 +17,17 @@ export default function StatBar({
   breachCount,
   sosCount,
   delayedCount,
+  onMenuToggle,
 }: Props) {
   return (
     <header className="topbar">
+      <button
+        className="menu-btn"
+        onClick={onMenuToggle}
+        aria-label="Toggle fleet panel"
+      >
+        ☰
+      </button>
       <div className="brand">
         <div className="brand-mark">NER</div>
         <div className="brand-text">
