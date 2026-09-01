@@ -115,7 +115,9 @@ export default function FleetMap({
       // idle (and it makes the basemap capturable in screenshots/thumbnails).
       preserveDrawingBuffer: true,
     });
-    map.addControl(new maplibregl.NavigationControl({ visualizePitch: true }), "top-left");
+    // Bottom-right so the zoom / compass controls don't collide with the
+    // top-left map toolbar (Plan a trip / Report a hazard).
+    map.addControl(new maplibregl.NavigationControl({ visualizePitch: true }), "bottom-right");
     mapRef.current = map;
     (window as unknown as { __map?: MlMap }).__map = map;
     map.on("error", (e) => {
