@@ -1,15 +1,19 @@
 :root {
-  --bg: #070b14;
-  --panel: #0e1626;
-  --panel-2: #131f33;
-  --line: #1f2d44;
-  --text: #e6edf7;
-  --muted: #8497b0;
-  --ok: #22c55e;
-  --warn: #f5a623;
-  --danger: #ff2d55;
-  --accent: #38bdf8;
-  font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+  /* Light, human, calm control-room palette. */
+  --bg: #f4f7fb;
+  --panel: #ffffff;
+  --panel-2: #f2f6fb;
+  --line: #e2e8f2;
+  --text: #1f2a3d;
+  --muted: #6b7a90;
+  --ok: #1f9d55;
+  --warn: #e08a1e;
+  --danger: #e23b52;
+  --accent: #2f77e0;
+  --brand-a: #0b8a63;
+  --brand-b: #2f77e0;
+  --shadow: 0 1px 3px rgba(20, 40, 80, 0.06), 0 6px 18px rgba(20, 40, 80, 0.06);
+  font-family: "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
 }
 
 * { box-sizing: border-box; }
@@ -22,8 +26,10 @@ body { background: var(--bg); color: var(--text); overflow: hidden; }
 .topbar {
   display: flex; align-items: center; gap: 24px;
   padding: 12px 20px;
-  background: linear-gradient(180deg, #0e1626, #0a1120);
+  background: #ffffff;
   border-bottom: 1px solid var(--line);
+  box-shadow: var(--shadow);
+  z-index: 5;
 }
 .brand { display: flex; align-items: center; gap: 12px; min-width: 260px; }
 .brand-mark {
@@ -218,15 +224,15 @@ button.conn-row:hover { border-color: var(--accent); }
 /* ---------- Satellite risk card ---------- */
 .map-hint {
   position: absolute; top: 12px; left: 50%; transform: translateX(-50%);
-  background: rgba(8,14,26,0.82); color: var(--muted);
+  background: rgba(255,255,255,0.94); color: var(--muted);
   font-size: 11px; padding: 5px 12px; border-radius: 14px;
-  border: 1px solid var(--line); pointer-events: none;
+  border: 1px solid var(--line); pointer-events: none; box-shadow: var(--shadow);
 }
 .route-banner {
   position: absolute; top: 44px; left: 50%; transform: translateX(-50%);
-  background: rgba(8,14,26,0.9); border: 1px solid var(--line);
+  background: rgba(255,255,255,0.96); border: 1px solid var(--line);
   border-radius: 12px; padding: 8px 14px; text-align: center;
-  pointer-events: none; min-width: 260px;
+  pointer-events: none; min-width: 260px; box-shadow: var(--shadow);
 }
 .route-banner.rerouted { border-color: var(--warn); }
 .route-banner.clear { border-color: var(--ok); }
@@ -241,7 +247,7 @@ button.conn-row:hover { border-color: var(--accent); }
   position: absolute; left: 12px; bottom: 12px; width: 320px;
   background: var(--panel); border: 1px solid var(--line);
   border-radius: 14px; padding: 14px;
-  box-shadow: 0 8px 28px rgba(0,0,0,0.45); z-index: 5;
+  box-shadow: var(--shadow); z-index: 5;
 }
 .sat-head { display: flex; justify-content: space-between; align-items: flex-start; }
 .sat-title { font-weight: 800; font-size: 14px; }
@@ -273,13 +279,13 @@ button.conn-row:hover { border-color: var(--accent); }
 /* ---------- Login gate ---------- */
 .login-screen {
   height: 100vh; display: grid; place-items: center;
-  background: radial-gradient(1200px 600px at 50% -10%, #12203a, var(--bg));
+  background: radial-gradient(1200px 600px at 50% -10%, #e7f0ff, var(--bg));
 }
 .login-card {
   width: 340px; display: flex; flex-direction: column; gap: 12px;
   background: var(--panel); border: 1px solid var(--line);
   border-radius: 16px; padding: 24px;
-  box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+  box-shadow: 0 20px 60px rgba(20,40,80,0.12);
 }
 .login-brand { display: flex; align-items: center; gap: 12px; margin-bottom: 6px; }
 .login-title { font-weight: 800; font-size: 16px; }
@@ -368,3 +374,79 @@ button.conn-row:hover { border-color: var(--accent); }
   .mobile-panel.open { display: flex !important; flex-direction: column; }
   .map-wrap { grid-column: 1; }
 }
+
+/* ---------- Light-theme polish (humanized) ---------- */
+.stat { box-shadow: var(--shadow); }
+.panel { box-shadow: none; }
+.brand-title { color: var(--text); }
+.alert-detail { color: #46586f; }
+.maplibregl-ctrl-attrib { background: rgba(255,255,255,0.8) !important; }
+.maplibregl-ctrl-attrib a { color: var(--muted) !important; }
+
+/* ---------- Language switcher (top bar) ---------- */
+.lang-switch {
+  background: var(--panel-2); color: var(--text);
+  border: 1px solid var(--line); border-radius: 10px;
+  padding: 7px 10px; font-size: 12px; font-weight: 600; cursor: pointer;
+  font-family: inherit;
+}
+
+/* ---------- Toolbar buttons (Plan trip / Report) ---------- */
+.toolbtn {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: var(--panel-2); color: var(--text);
+  border: 1px solid var(--line); border-radius: 12px;
+  padding: 8px 14px; font-size: 13px; font-weight: 700; cursor: pointer;
+  font-family: inherit; transition: border-color 0.15s, background 0.15s;
+}
+.toolbtn:hover { border-color: var(--accent); }
+.toolbtn.primary {
+  background: linear-gradient(135deg, var(--brand-a), var(--brand-b));
+  color: #fff; border: none;
+}
+
+/* ---------- Route planner + Report: floating cards on the map ---------- */
+.map-card {
+  position: absolute; top: 12px; right: 12px; width: 300px; z-index: 6;
+  background: var(--panel); border: 1px solid var(--line);
+  border-radius: 16px; padding: 16px; box-shadow: var(--shadow);
+}
+.map-card h3 {
+  margin: 0 0 4px; font-size: 15px; font-weight: 800; color: var(--text);
+}
+.map-card .sub { font-size: 12px; color: var(--muted); margin-bottom: 12px; }
+.field-label {
+  display: block; font-size: 11px; font-weight: 700; color: var(--muted);
+  text-transform: uppercase; letter-spacing: 0.5px; margin: 10px 0 4px;
+}
+.field {
+  width: 100%; background: var(--panel-2); color: var(--text);
+  border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px;
+  font-size: 14px; font-family: inherit; box-sizing: border-box;
+}
+.field:focus { outline: none; border-color: var(--accent); }
+textarea.field { resize: vertical; min-height: 64px; }
+.card-actions { display: flex; gap: 8px; margin-top: 14px; }
+.card-actions .toolbtn { flex: 1; justify-content: center; }
+.card-close {
+  position: absolute; top: 12px; right: 14px; background: none; border: none;
+  color: var(--muted); font-size: 18px; cursor: pointer; line-height: 1;
+}
+.route-outcome {
+  margin-top: 12px; padding: 10px 12px; border-radius: 10px;
+  background: var(--panel-2); font-size: 13px; font-weight: 700;
+}
+.route-outcome.clear { color: var(--ok); }
+.route-outcome.rerouted { color: var(--warn); }
+.toast {
+  position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%);
+  background: var(--ok); color: #fff; padding: 12px 20px; border-radius: 12px;
+  font-size: 13px; font-weight: 700; box-shadow: var(--shadow); z-index: 40;
+  max-width: 80%; text-align: center;
+}
+
+/* ---------- Map toolbar (Plan trip / Report buttons) ---------- */
+.map-toolbar {
+  position: absolute; top: 12px; left: 12px; display: flex; gap: 8px; z-index: 6;
+}
+.map-toolbar .toolbtn { background: rgba(255,255,255,0.96); box-shadow: var(--shadow); }

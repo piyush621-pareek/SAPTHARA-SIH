@@ -38,7 +38,7 @@ const EMPTY_STYLE: StyleSpecification = {
   version: 8,
   sources: {},
   layers: [
-    { id: "bg", type: "background", paint: { "background-color": "#0b1220" } },
+    { id: "bg", type: "background", paint: { "background-color": "#e8eef6" } },
   ],
 };
 

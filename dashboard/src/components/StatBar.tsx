@@ -1,3 +1,5 @@
+import { LanguageSwitcher, useLang } from "../i18n";
+
 interface Props {
   connected: boolean;
   activeTrucks: number;
@@ -19,6 +21,7 @@ export default function StatBar({
   delayedCount,
   onMenuToggle,
 }: Props) {
+  const { t } = useLang();
   return (
     <header className="topbar">
       <button
@@ -31,22 +34,24 @@ export default function StatBar({
       <div className="brand">
         <div className="brand-mark">NER</div>
         <div className="brand-text">
-          <div className="brand-title">Command &amp; Control</div>
-          <div className="brand-sub">Smart Logistics · North Eastern Region</div>
+          <div className="brand-title">{t("brandTitle")}</div>
+          <div className="brand-sub">{t("brandSub")}</div>
         </div>
       </div>
 
       <div className="stats">
-        <Stat label="Active" value={`${activeTrucks}/${totalTrucks}`} tone="ok" />
-        <Stat label="Hazards" value={hazardCount} tone="warn" />
-        <Stat label="Breaches" value={breachCount} tone={breachCount ? "warn" : "muted"} />
-        <Stat label="Delayed" value={delayedCount} tone={delayedCount ? "warn" : "muted"} />
-        <Stat label="SOS" value={sosCount} tone={sosCount ? "danger" : "muted"} />
+        <Stat label={t("active")} value={`${activeTrucks}/${totalTrucks}`} tone="ok" />
+        <Stat label={t("hazards")} value={hazardCount} tone="warn" />
+        <Stat label={t("breaches")} value={breachCount} tone={breachCount ? "warn" : "muted"} />
+        <Stat label={t("delayed")} value={delayedCount} tone={delayedCount ? "warn" : "muted"} />
+        <Stat label={t("sos")} value={sosCount} tone={sosCount ? "danger" : "muted"} />
       </div>
+
+      <LanguageSwitcher />
 
       <div className={`conn ${connected ? "up" : "down"}`}>
         <span className="conn-dot" />
-        {connected ? "SOCKET LIVE" : "RECONNECTING…"}
+        {connected ? t("live") : t("reconnecting")}
       </div>
     </header>
   );

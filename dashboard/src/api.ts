@@ -48,15 +48,44 @@ export async function fetchGeoRisk(lat: number, lng: number): Promise<GeoRisk> {
   return body.data;
 }
 
-/** Hazard-aware route for the demo corridor (recomputes as hazards change). */
-export async function fetchRoute(): Promise<RouteResult> {
+export interface LatLng {
+  latitude: number;
+  longitude: number;
+}
+
+/**
+ * Hazard-aware route. Defaults to the Guwahati→Tawang demo corridor, but the
+ * From/To planner passes any origin/destination the operator picks.
+ */
+export async function fetchRoute(
+  origin: LatLng = ROUTE_ORIGIN,
+  destination: LatLng = ROUTE_DEST
+): Promise<RouteResult> {
   const res = await fetch(`${API}/routing/route`, {
     method: "POST",
     headers: { "content-type": "application/json", ...authHeader() },
-    body: JSON.stringify({ origin: ROUTE_ORIGIN, destination: ROUTE_DEST }),
+    body: JSON.stringify({ origin, destination }),
   });
   const body = (await res.json()) as { data: RouteResult };
   return body.data;
+}
+
+export interface NewReport {
+  report_type: "landslide" | "flood" | "roadblock" | "supply_issue" | "other";
+  notes: string;
+  urgency: "low" | "medium" | "high" | "critical";
+  latitude: number;
+  longitude: number;
+}
+
+/** File a field report (same endpoint the phone app posts hazards to). */
+export async function postReport(report: NewReport): Promise<void> {
+  const res = await fetch(`${API}/reports`, {
+    method: "POST",
+    headers: { "content-type": "application/json", ...authHeader() },
+    body: JSON.stringify({ ...report, media_ids: [] }),
+  });
+  if (!res.ok) throw new Error(`Report failed → HTTP ${res.status}`);
 }
 
 export async function fetchLedger(): Promise<LedgerEntry[]> {

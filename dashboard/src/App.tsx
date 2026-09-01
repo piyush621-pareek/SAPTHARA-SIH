@@ -31,11 +31,21 @@ import StatBar from "./components/StatBar";
 import SatelliteRiskCard from "./components/SatelliteRiskCard";
 import LedgerPanel from "./components/LedgerPanel";
 import ConnectivityPanel from "./components/ConnectivityPanel";
+import RoutePlanner from "./components/RoutePlanner";
+import ReportForm from "./components/ReportForm";
+import { useLang } from "./i18n";
+
+// Default demo corridor (Guwahati → Tawang) until the planner picks another.
+const DEFAULT_OD = {
+  origin: { latitude: 26.1445, longitude: 91.7362 },
+  destination: { latitude: 27.5859, longitude: 91.8594 },
+};
 
 const BREACH_HOLD_MS = 20_000; // how long a geofence stays lit red after a breach
 const MAX_FEED = 40;
 
 export default function App() {
+  const { t } = useLang();
   const [fleet, setFleet] = useState<FleetVehicle[]>([]);
   const [hazards, setHazards] = useState<HazardFeature[]>([]);
   const [positions, setPositions] = useState<Record<string, FleetPosition>>({});
@@ -61,6 +71,11 @@ export default function App() {
   const [ledgerVerify, setLedgerVerify] = useState<LedgerVerify | null>(null);
   const [route, setRoute] = useState<RouteResult | null>(null);
   const [connectivity, setConnectivity] = useState<ConnectivityData | null>(null);
+  // From/To trip planner + field-report tools (brought over from the phone app).
+  const [routeOD, setRouteOD] = useState(DEFAULT_OD);
+  const [showPlanner, setShowPlanner] = useState(false);
+  const [showReport, setShowReport] = useState(false);
+  const [toast, setToast] = useState<string | null>(null);
 
   const socketRef = useRef<Socket | null>(null);
   const breachTimers = useRef<Map<string, number>>(new Map());
@@ -247,15 +262,15 @@ export default function App() {
   useEffect(() => {
     const load = async () => {
       try {
-        setRoute(await fetchRoute());
+        setRoute(await fetchRoute(routeOD.origin, routeOD.destination));
       } catch {
         /* backend momentarily unavailable */
       }
     };
     load();
-    const t = setInterval(load, 8000);
-    return () => clearInterval(t);
-  }, []);
+    const timer = setInterval(load, 8000);
+    return () => clearInterval(timer);
+  }, [routeOD]);
 
   // Poll district-wise connectivity + delivery statuses.
   useEffect(() => {
@@ -336,7 +351,61 @@ export default function App() {
             route={route}
             onMapClick={handleMapClick}
           />
-          <div className="map-hint">Click anywhere to query 🛰 satellite risk</div>
+          <div className="map-hint">{t("mapHint")}</div>
+
+          <div className="map-toolbar">
+            <button
+              className="toolbtn"
+              onClick={() => {
+                setShowPlanner((s) => !s);
+                setShowReport(false);
+              }}
+            >
+              🧭 {t("planRoute")}
+            </button>
+            <button
+              className="toolbtn"
+              onClick={() => {
+                setShowReport((s) => !s);
+                setShowPlanner(false);
+              }}
+            >
+              📝 {t("reportHazard")}
+            </button>
+          </div>
+
+          {showPlanner && (
+            <RoutePlanner
+              onClose={() => setShowPlanner(false)}
+              onRoute={(r, f) => {
+                setRoute(r);
+                const coords = r.geometry.coordinates;
+                if (coords.length) {
+                  const a = coords[0];
+                  const b = coords[coords.length - 1];
+                  setRouteOD({
+                    origin: { latitude: a[1], longitude: a[0] },
+                    destination: { latitude: b[1], longitude: b[0] },
+                  });
+                }
+                focusOn(f.lng, f.lat);
+              }}
+            />
+          )}
+
+          {showReport && (
+            <ReportForm
+              pickedPoint={satPoint}
+              onClose={() => setShowReport(false)}
+              onSubmitted={() => {
+                setShowReport(false);
+                setToast(t("reportSent"));
+                window.setTimeout(() => setToast(null), 4000);
+              }}
+            />
+          )}
+
+          {toast && <div className="toast">{toast}</div>}
           {route && (
             <div className={`route-banner ${route.hazard_avoided ? "rerouted" : "clear"}`}>
               <div className="route-legend">

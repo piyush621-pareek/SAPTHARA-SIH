@@ -48,6 +48,10 @@ function haversineKm(aLat: number, aLng: number, bLat: number, bLng: number): nu
   return 2 * R * Math.asin(Math.sqrt(s));
 }
 
+/** Curated NER towns (sorted A–Z) for From/To pickers and dropdowns. */
+export const NER_PLACES = [...PLACES].sort((a, b) => a.name.localeCompare(b.name));
+export type NerPlace = Place;
+
 /** Nearest named NER place: "Dirang" if within ~8 km, else "near Dirang". */
 export function placeName(lat: number | null, lng: number | null): string {
   if (lat == null || lng == null) return "—";
