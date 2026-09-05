@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:saptahara/core/network/api_client.dart';
 import 'package:saptahara/data/repositories/mock_repositories.dart';
 import 'package:saptahara/data/repositories/api_repositories.dart';
 import 'package:saptahara/domain/entities/entities.dart';
@@ -212,6 +213,73 @@ final syncControllerProvider = StateNotifierProvider<SyncController, List<SyncJo
 
 /// Last successful sync time (surfaced on Profile).
 final lastSyncTimeProvider = StateProvider<DateTime?>((ref) => null);
+
+/// ---------- Fleet tracking ----------
+class FleetController extends StateNotifier<List<FleetVehicle>> {
+  FleetController() : super(const []) {
+    _init();
+  }
+
+  StreamSubscription? _sub;
+
+  void _init() {
+    _loadFromApi();
+    final socket = SocketService.instance..connect();
+    _sub = socket.onFleet.listen((data) {
+      final v = FleetVehicle.fromJson(data);
+      final list = [...state];
+      final idx = list.indexWhere((e) => e.id == v.id);
+      if (idx >= 0) {
+        list[idx] = v;
+      } else {
+        list.insert(0, v);
+      }
+      state = list;
+    });
+  }
+
+  Future<void> _loadFromApi() async {
+    try {
+      final body = await ApiClient.instance.getJson('/fleet/vehicles');
+      final list = (body is Map && body['data'] is List) ? body['data'] as List : const [];
+      state = list.whereType<Map>().map((j) => FleetVehicle.fromJson(Map<String, dynamic>.from(j))).toList();
+    } catch (_) {}
+  }
+
+  @override
+  void dispose() {
+    _sub?.cancel();
+    super.dispose();
+  }
+}
+
+final fleetProvider = StateNotifierProvider<FleetController, List<FleetVehicle>>(
+    (ref) => FleetController());
+
+/// ---------- District connectivity ----------
+final districtStatusProvider = Provider<List<DistrictStatus>>((ref) {
+  return const [
+    DistrictStatus(name: 'Tawang', state: 'Arunachal Pradesh', road: ConnStatus.degraded, network: ConnStatus.good, openRoutes: 2, totalRoutes: 3, note: 'Sela Pass intermittent closures'),
+    DistrictStatus(name: 'West Kameng', state: 'Arunachal Pradesh', road: ConnStatus.good, network: ConnStatus.good, openRoutes: 4, totalRoutes: 4),
+    DistrictStatus(name: 'Kamrup Metro', state: 'Assam', road: ConnStatus.good, network: ConnStatus.good, openRoutes: 8, totalRoutes: 8),
+    DistrictStatus(name: 'Sonitpur', state: 'Assam', road: ConnStatus.good, network: ConnStatus.degraded, openRoutes: 5, totalRoutes: 6),
+    DistrictStatus(name: 'East Siang', state: 'Arunachal Pradesh', road: ConnStatus.down, network: ConnStatus.down, openRoutes: 0, totalRoutes: 3, note: 'Landslide blocked NH-15'),
+    DistrictStatus(name: 'Churachandpur', state: 'Manipur', road: ConnStatus.degraded, network: ConnStatus.degraded, openRoutes: 1, totalRoutes: 2, note: 'Heavy rainfall advisory'),
+    DistrictStatus(name: 'Aizawl', state: 'Mizoram', road: ConnStatus.good, network: ConnStatus.good, openRoutes: 3, totalRoutes: 3),
+    DistrictStatus(name: 'Kohima', state: 'Nagaland', road: ConnStatus.degraded, network: ConnStatus.good, openRoutes: 2, totalRoutes: 3),
+  ];
+});
+
+/// ---------- Delivery tracking ----------
+final deliveryProvider = Provider<List<DeliveryInfo>>((ref) {
+  final now = DateTime.now();
+  return [
+    DeliveryInfo(id: 'D001', description: 'Medical Supplies — Batch 47', origin: 'Guwahati', destination: 'Tawang', stage: DeliveryStage.inTransit, eta: now.add(const Duration(hours: 6))),
+    DeliveryInfo(id: 'D002', description: 'Ration Kit — 200 units', origin: 'Dibrugarh', destination: 'Itanagar', stage: DeliveryStage.delayed, eta: now.add(const Duration(hours: 3)), delayReason: 'Landslide near Banderdewa'),
+    DeliveryInfo(id: 'D003', description: 'Construction Material', origin: 'Silchar', destination: 'Aizawl', stage: DeliveryStage.delivered, eta: now.subtract(const Duration(hours: 2)), actualArrival: now.subtract(const Duration(minutes: 45))),
+    DeliveryInfo(id: 'D004', description: 'Emergency Fuel Tanker', origin: 'Guwahati', destination: 'Kohima', stage: DeliveryStage.scheduled, eta: now.add(const Duration(hours: 12))),
+  ];
+});
 
 /// ---------- Settings ----------
 final notificationsEnabledProvider = StateProvider<bool>((ref) => true);

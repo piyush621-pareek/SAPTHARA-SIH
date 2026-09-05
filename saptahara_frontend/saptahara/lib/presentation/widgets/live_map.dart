@@ -11,12 +11,38 @@ import 'package:saptahara/presentation/widgets/mock_map.dart' show MapStyle;
 /// Drop-in replacement for the legacy MockMap: same constructor shape. Route
 /// and geofence geometry now carry real coordinates (MapPoint.x = longitude,
 /// MapPoint.y = latitude), so they plot on the actual map.
+/// Nepal Trishuli Corridor crisis zones — August 2026.
+class _NepalZone {
+  final String name;
+  final String event;
+  final String severity;
+  final List<LatLng> polygon;
+  const _NepalZone(this.name, this.event, this.severity, this.polygon);
+}
+
+const _nepalCrisisZones = <_NepalZone>[
+  _NepalZone('Rasuwa', 'Glacier collapse / flash flood', 'critical', [LatLng(28.05,85.1),LatLng(28.05,85.5),LatLng(28.35,85.5),LatLng(28.35,85.1)]),
+  _NepalZone('Nuwakot', 'Flash flood / debris flow', 'high', [LatLng(27.85,85.0),LatLng(27.85,85.35),LatLng(28.1,85.35),LatLng(28.1,85.0)]),
+  _NepalZone('Dhading', 'Landslide / flood', 'high', [LatLng(27.7,84.7),LatLng(27.7,85.1),LatLng(28.0,85.1),LatLng(28.0,84.7)]),
+  _NepalZone('Gorkha', 'Landslide', 'moderate', [LatLng(27.9,84.4),LatLng(27.9,84.8),LatLng(28.2,84.8),LatLng(28.2,84.4)]),
+  _NepalZone('Tanahun', 'Flood / inundation', 'moderate', [LatLng(27.8,83.9),LatLng(27.8,84.4),LatLng(28.1,84.4),LatLng(28.1,83.9)]),
+  _NepalZone('Nawalparasi', 'River overflow', 'moderate', [LatLng(27.4,83.6),LatLng(27.4,84.0),LatLng(27.75,84.0),LatLng(27.75,83.6)]),
+  _NepalZone('Chitwan', 'Flood / displacement', 'high', [LatLng(27.3,83.9),LatLng(27.3,84.6),LatLng(27.7,84.6),LatLng(27.7,83.9)]),
+];
+
+Color _severityColor(String s) => switch (s) {
+  'critical' => const Color(0xFFDC2626),
+  'high' => const Color(0xFFEA580C),
+  _ => const Color(0xFFD97706),
+};
+
 class LiveMap extends StatefulWidget {
   final List<RouteOption> routes;
   final String? highlightedRouteId;
   final List<HazardAlert> hazards;
   final Geofence? geofence;
   final MapStyle style;
+  final bool showNepalCrisis;
 
   /// Deep-link focus target: when [focusNonce] changes the map flies to
   /// (focusLat, focusLng) and drops a highlight marker.
@@ -31,6 +57,7 @@ class LiveMap extends StatefulWidget {
     this.hazards = const [],
     this.geofence,
     this.style = MapStyle.standard,
+    this.showNepalCrisis = false,
     this.focusLat,
     this.focusLng,
     this.focusNonce = 0,
@@ -129,6 +156,7 @@ class _LiveMapState extends State<LiveMap> {
               maxZoom: 18,
             ),
             if (widget.geofence != null) _geofenceLayer(widget.geofence!),
+            if (widget.showNepalCrisis) _nepalCrisisLayer(),
             _routeLayer(),
             _markerLayer(),
           ],
@@ -220,6 +248,22 @@ class _LiveMapState extends State<LiveMap> {
     }
 
     return MarkerLayer(markers: markers);
+  }
+
+  Widget _nepalCrisisLayer() {
+    return PolygonLayer(
+      polygons: _nepalCrisisZones.map((z) {
+        final c = _severityColor(z.severity);
+        return Polygon(
+          points: z.polygon,
+          color: c.withValues(alpha: 0.2),
+          borderColor: c,
+          borderStrokeWidth: 2,
+          label: '⚠ ${z.name}\n${z.event}',
+          labelStyle: const TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: Color(0xFF7C2D12)),
+        );
+      }).toList().cast<Polygon<Object>>(),
+    );
   }
 }
 

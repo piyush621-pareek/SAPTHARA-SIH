@@ -20,7 +20,7 @@ type Dict = Record<string, string>;
 const STRINGS: Record<Lang, Dict> = {
   en: {
     brandTitle: "Command & Control",
-    brandSub: "Smart Logistics · North Eastern Region",
+    brandSub: "North Eastern Region",
     active: "On the move",
     hazards: "Hazards",
     breaches: "Breaches",

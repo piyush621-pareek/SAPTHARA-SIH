@@ -13,10 +13,12 @@ class SocketService {
 
   final _emergency = StreamController<Map<String, dynamic>>.broadcast();
   final _breach = StreamController<Map<String, dynamic>>.broadcast();
+  final _fleet = StreamController<Map<String, dynamic>>.broadcast();
   final _connected = StreamController<bool>.broadcast();
 
   Stream<Map<String, dynamic>> get onEmergency => _emergency.stream;
   Stream<Map<String, dynamic>> get onBreach => _breach.stream;
+  Stream<Map<String, dynamic>> get onFleet => _fleet.stream;
   Stream<bool> get onConnected => _connected.stream;
 
   bool get isConnected => _socket?.connected ?? false;
@@ -40,6 +42,9 @@ class SocketService {
     socket.on('hazard:breach', (data) {
       if (data is Map) _breach.add(Map<String, dynamic>.from(data));
     });
+    socket.on('fleet:update', (data) {
+      if (data is Map) _fleet.add(Map<String, dynamic>.from(data));
+    });
 
     _socket = socket;
   }
@@ -49,6 +54,7 @@ class SocketService {
     _socket = null;
     _emergency.close();
     _breach.close();
+    _fleet.close();
     _connected.close();
   }
 }

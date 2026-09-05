@@ -37,6 +37,7 @@ const PLACES: Place[] = [
   { name: "Karimganj", lat: 24.87, lng: 92.36 },
   { name: "Pasighat", lat: 28.07, lng: 95.33 },
   { name: "Namchi", lat: 27.17, lng: 88.36 },
+  { name: "Siliguri", lat: 26.7271, lng: 88.3953 },
 ];
 
 function haversineKm(aLat: number, aLng: number, bLat: number, bLng: number): number {

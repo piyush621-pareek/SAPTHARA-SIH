@@ -39,6 +39,31 @@ class Places {
     ('Karimganj', 24.87, 92.36),
     ('Pasighat', 28.07, 95.33),
     ('Namchi', 27.17, 88.36),
+    // Nepal: flood & landslide hotspots (2025-26 crisis corridors)
+    ('Kathmandu', 27.7172, 85.3240),
+    ('Pokhara', 28.2096, 83.9856),
+    ('Birgunj', 27.0104, 84.8779),
+    ('Hetauda', 27.4287, 85.0322),
+    ('Butwal', 27.7006, 83.4486),
+    ('Bharatpur', 27.6833, 84.4333),
+    ('Dharan', 26.8121, 87.2835),
+    ('Biratnagar', 26.4525, 87.2718),
+    ('Janakpur', 26.7288, 85.9263),
+    ('Nepalgunj', 28.05, 81.6167),
+    ('Dhangadhi', 28.6833, 80.60),
+    ('Sindhupalchok', 27.95, 85.70),
+    ('Gorkha', 28.00, 84.6333),
+    ('Manang', 28.6667, 84.0167),
+    ('Myagdi', 28.5667, 83.2167),
+    ('Kaski', 28.3333, 83.95),
+    ('Lamjung', 28.30, 84.40),
+    ('Rasuwa', 28.10, 85.30),
+    ('Dolakha', 27.7833, 86.0667),
+    ('Sunsari', 26.65, 87.15),
+    // India-Nepal corridor towns
+    ('Siliguri', 26.7271, 88.3953),
+    ('Raxaul', 26.9787, 84.8512),
+    ('Jogbani', 26.3964, 87.2648),
   ];
 
   /// Public list of selectable NER places (name, lat, lng) for route pickers.

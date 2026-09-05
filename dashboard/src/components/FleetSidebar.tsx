@@ -14,6 +14,18 @@ const STATUS_LABEL: Record<"sos" | "breach" | "delayed", string> = {
   delayed: "Delayed",
 };
 
+// Human-friendly names for vehicle registrations (Indian RTO format)
+// AR = Arunachal Pradesh, AS = Assam, NL = Nagaland, MN = Manipur, etc.
+const RTO_STATE: Record<string, string> = {
+  AR: "Arunachal", AS: "Assam", MN: "Manipur", ML: "Meghalaya",
+  MZ: "Mizoram", NL: "Nagaland", SK: "Sikkim", TR: "Tripura",
+};
+function friendlyReg(reg: string): string {
+  const m = reg.match(/^([A-Z]{2})\d{2}/);
+  const state = m ? RTO_STATE[m[1]] : null;
+  return state ? `${reg} (${state})` : reg;
+}
+
 export default function FleetSidebar({
   fleet,
   positions,
@@ -43,7 +55,7 @@ export default function FleetSidebar({
               <span className={`dot ${moving ? "live" : "idle"}`} />
               <div className="fleet-meta">
                 <div className="fleet-reg">
-                  {v.registration}
+                  {friendlyReg(v.registration)}
                   {st && <span className={`fleet-status ${st}`}>{STATUS_LABEL[st]}</span>}
                 </div>
                 <div className="fleet-sub">

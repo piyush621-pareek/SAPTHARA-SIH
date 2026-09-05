@@ -249,6 +249,32 @@ export default function App() {
     };
   }, []);
 
+  // Client-side position simulation — makes trucks drift along realistic
+  // headings so the map feels alive even when the backend isn't streaming.
+  useEffect(() => {
+    const interval = window.setInterval(() => {
+      setPositions((prev) => {
+        const next = { ...prev };
+        for (const [id, p] of Object.entries(next)) {
+          const heading = (p.headingDeg ?? Math.random() * 360) + (Math.random() - 0.5) * 30;
+          const speed = 25 + Math.random() * 45;
+          const dLat = Math.cos((heading * Math.PI) / 180) * 0.003 * (0.5 + Math.random());
+          const dLng = Math.sin((heading * Math.PI) / 180) * 0.003 * (0.5 + Math.random());
+          next[id] = {
+            ...p,
+            latitude: p.latitude + dLat,
+            longitude: p.longitude + dLng,
+            speedKmph: Math.round(speed),
+            headingDeg: heading % 360,
+            at: new Date().toISOString(),
+          };
+        }
+        return next;
+      });
+    }, 3000);
+    return () => window.clearInterval(interval);
+  }, []);
+
   // Poll the audit ledger + chain verification (new SOS records appear here).
   useEffect(() => {
     refreshLedger();
@@ -379,13 +405,37 @@ export default function App() {
               onClose={() => setShowPlanner(false)}
               onRoute={(r, f) => {
                 setRoute(r);
-                const coords = r.geometry.coordinates;
+                const rec = r.alternatives.find((a) => a.id === "recommended");
+                const coords = rec?.geometry.coordinates ?? r.geometry.coordinates;
                 if (coords.length) {
                   const a = coords[0];
                   const b = coords[coords.length - 1];
                   setRouteOD({
                     origin: { latitude: a[1], longitude: a[0] },
                     destination: { latitude: b[1], longitude: b[0] },
+                  });
+                  // Place fleet vehicles along the route
+                  setPositions((prev) => {
+                    const ids = Object.keys(prev);
+                    if (!ids.length || coords.length < 2) return prev;
+                    const next = { ...prev };
+                    ids.forEach((id, i) => {
+                      const t = ids.length > 1 ? i / (ids.length - 1) : 0.5;
+                      const idx = Math.min(Math.floor(t * (coords.length - 1)), coords.length - 1);
+                      const nIdx = Math.min(idx + 1, coords.length - 1);
+                      const c = coords[idx];
+                      const nc = coords[nIdx];
+                      const heading = Math.atan2(nc[0] - c[0], nc[1] - c[1]) * (180 / Math.PI);
+                      next[id] = {
+                        ...next[id],
+                        latitude: c[1],
+                        longitude: c[0],
+                        headingDeg: heading,
+                        speedKmph: 30 + Math.round(Math.random() * 40),
+                        at: new Date().toISOString(),
+                      };
+                    });
+                    return next;
                   });
                 }
                 focusOn(f.lng, f.lat);

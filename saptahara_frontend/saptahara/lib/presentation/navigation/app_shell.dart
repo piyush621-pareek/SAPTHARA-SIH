@@ -8,8 +8,7 @@ import 'package:saptahara/domain/entities/entities.dart';
 import 'package:saptahara/presentation/home/home_screen.dart';
 import 'package:saptahara/presentation/route/route_screen.dart';
 import 'package:saptahara/presentation/report/report_screen.dart';
-import 'package:saptahara/presentation/settings/settings_screen.dart';
-import 'package:saptahara/presentation/profile/profile_screen.dart';
+import 'package:saptahara/presentation/more/more_screen.dart';
 import 'package:saptahara/presentation/widgets/alert_toast.dart';
 import 'package:saptahara/presentation/widgets/update_banner.dart';
 
@@ -24,16 +23,14 @@ class AppShell extends ConsumerWidget {
     HomeScreen(),
     RouteScreen(),
     ReportScreen(),
-    SettingsScreen(),
-    ProfileScreen(),
+    MoreScreen(),
   ];
 
   static const _items = [
     _NavItem(icon: Icons.home_rounded, trKey: 'navHome'),
     _NavItem(icon: Icons.alt_route_rounded, trKey: 'navRoute'),
     _NavItem(icon: Icons.report_rounded, trKey: 'navReport'),
-    _NavItem(icon: Icons.settings_rounded, trKey: 'navSettings'),
-    _NavItem(icon: Icons.person_rounded, trKey: 'navProfile'),
+    _NavItem(icon: Icons.menu_rounded, trKey: 'more'),
   ];
 
   @override

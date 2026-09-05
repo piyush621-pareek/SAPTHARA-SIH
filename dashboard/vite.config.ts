@@ -7,10 +7,17 @@ export default defineConfig({
   plugins: [react()],
   server: {
     port: 5173,
+    host: true,
     proxy: {
       "/api": {
         target: "http://localhost:8080",
         changeOrigin: true,
+      },
+      "/bhuvan-api": {
+        target: "https://bhuvan-app1.nrsc.gov.in",
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/bhuvan-api/, "/api"),
+        secure: false,
       },
     },
   },

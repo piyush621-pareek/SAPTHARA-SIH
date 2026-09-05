@@ -40,6 +40,12 @@ export const env = {
     .map((s) => s.trim())
     .filter(Boolean),
 
+  // Twilio direct integration (used when SMS_WEBHOOK_URL is not set)
+  twilioSid: process.env.TWILIO_SID ?? "",
+  twilioAuthToken: process.env.TWILIO_AUTH_TOKEN ?? "",
+  twilioFrom: process.env.TWILIO_FROM ?? "",
+  twilioVerifyServiceSid: process.env.TWILIO_VERIFY_SERVICE_SID ?? "",
+
   // --- ISRO / NRSC geospatial feeds ---------------------------------------
   // Live calls require ISRO-issued tokens (register at the respective portals).
   // Without them the clients return a physically-plausible modelled fallback.

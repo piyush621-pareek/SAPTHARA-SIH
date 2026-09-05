@@ -222,6 +222,14 @@ class AppStrings {
     'fromLabel': {'en': 'From (current location)', 'hi': 'कहाँ से (वर्तमान स्थान)', 'as': 'ক’ৰ পৰা (বৰ্তমান স্থান)', 'bn': 'কোথা থেকে (বর্তমান অবস্থান)'},
     'toLabel': {'en': 'To (destination)', 'hi': 'कहाँ तक (गंतव्य)', 'as': 'ক’লৈ (গন্তব্য)', 'bn': 'কোথায় (গন্তব্য)'},
     'findRoute': {'en': 'Find Safe Route', 'hi': 'सुरक्षित मार्ग खोजें', 'as': 'সুৰক্ষিত পথ বিচাৰক', 'bn': 'নিরাপদ রুট খুঁজুন'},
+    'fleet': {'en': 'Fleet', 'hi': 'बेड़ा', 'as': 'বহৰ', 'bn': 'বহর'},
+    'noFleetData': {'en': 'No fleet data yet', 'hi': 'कोई वाहन डेटा नहीं', 'as': 'বাহন ডেটা নাই', 'bn': 'যানবাহন ডেটা নেই'},
+    'districtConnectivity': {'en': 'District Connectivity', 'hi': 'जिला कनेक्टिविटी', 'as': 'জিলা সংযোগ', 'bn': 'জেলা সংযোগ'},
+    'noDistrictData': {'en': 'No district data', 'hi': 'जिला डेटा नहीं', 'as': 'জিলা ডেটা নাই', 'bn': 'জেলা ডেটা নেই'},
+    'deliveries': {'en': 'Deliveries', 'hi': 'डिलीवरी', 'as': 'ডেলিভাৰী', 'bn': 'ডেলিভারি'},
+    'noDeliveries': {'en': 'No deliveries to track', 'hi': 'कोई डिलीवरी नहीं', 'as': 'ডেলিভাৰী নাই', 'bn': 'ডেলিভারি নেই'},
+    'noVerifiedReports': {'en': 'No verified reports yet.\nSync a report to see its ledger receipt.', 'hi': 'कोई सत्यापित रिपोर्ट नहीं।', 'as': 'সত্যাপিত প্ৰতিবেদন নাই।', 'bn': 'যাচাইকৃত রিপোর্ট নেই।'},
+    'more': {'en': 'More', 'hi': 'और', 'as': 'অধিক', 'bn': 'আরো'},
   };
 
   static String t(String key, String lang) =>

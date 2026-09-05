@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import maplibregl, { Map as MlMap, Marker, StyleSpecification } from "maplibre-gl";
 import type {
   FleetVehicle,
@@ -70,11 +70,15 @@ function hazardFC(
   };
 }
 
-function markerEl(reg: string, heading: number | null): HTMLDivElement {
+function markerEl(reg: string, heading: number | null | undefined, speed?: number | null): HTMLDivElement {
   const el = document.createElement("div");
   el.className = "truck-marker";
+  const moving = speed != null && speed > 1;
   el.innerHTML = `
-    <div class="truck-icon" style="transform: rotate(${heading ?? 0}deg)">▲</div>
+    <div class="truck-arrow ${moving ? "moving" : ""}" style="transform: rotate(${heading ?? 0}deg)">
+      <svg width="28" height="28" viewBox="0 0 28 28"><polygon points="14,2 24,24 14,18 4,24" fill="${moving ? "#22c55e" : "#64748b"}" stroke="#fff" stroke-width="1.5"/></svg>
+    </div>
+    <div class="truck-speed">${speed != null && speed > 0 ? Math.round(speed) + " km/h" : ""}</div>
     <div class="truck-label">${reg}</div>`;
   return el;
 }
@@ -105,7 +109,7 @@ export default function FleetMap({
     const map = new maplibregl.Map({
       container: containerRef.current,
       style: EMPTY_STYLE,
-      center: [92.3, 26.9], // Guwahati–Tawang corridor
+      center: [92.5, 26.5], // North East India
       zoom: 7,
       pitch: 55, // 3D tilt for the command-room perspective
       bearing: -18,
@@ -138,6 +142,33 @@ export default function FleetMap({
         attribution: "© OpenStreetMap contributors",
       });
       map.addLayer({ id: "osm-tiles", type: "raster", source: "osm" });
+
+      // MOSDAC rainfall overlay (loaded async from metadata)
+      fetch("/mosdac/hem_latest.json")
+        .then((r) => r.json())
+        .then((meta: { file: string; bounds: [number, number, number, number] }) => {
+          const [west, south, east, north] = meta.bounds;
+          map.addSource("mosdac-rainfall", {
+            type: "image",
+            url: `/mosdac/${meta.file}`,
+            coordinates: [
+              [west, north],
+              [east, north],
+              [east, south],
+              [west, south],
+            ],
+          });
+          map.addLayer(
+            {
+              id: "mosdac-rainfall-layer",
+              type: "raster",
+              source: "mosdac-rainfall",
+              paint: { "raster-opacity": 0.6 },
+            },
+            "hazard-fill"
+          );
+        })
+        .catch(() => {});
 
       map.addSource("hazards", { type: "geojson", data: hazardFC([], new Set()) });
       map.addLayer({
@@ -239,13 +270,24 @@ export default function FleetMap({
     src?.setData(hazardFC(hazards, breachedHazardIds));
   }, [hazards, breachedHazardIds]);
 
-  // Update the route lines when the computed route changes (e.g. after reroute).
+  // Update the route lines and fit bounds when route changes.
   useEffect(() => {
     const map = mapRef.current;
     if (!map || !readyRef.current) return;
-    (map.getSource("route") as maplibregl.GeoJSONSource | undefined)?.setData(
-      routeFC(route)
-    );
+    const fc = routeFC(route);
+    (map.getSource("route") as maplibregl.GeoJSONSource | undefined)?.setData(fc);
+    if (route && route.alternatives.length > 0) {
+      const all = route.alternatives.flatMap((a) =>
+        a.geometry.coordinates.map((c: number[]) => [c[0], c[1]] as [number, number])
+      );
+      if (all.length >= 2) {
+        const bounds = all.reduce(
+          (b, c) => b.extend(c as [number, number]),
+          new maplibregl.LngLatBounds(all[0], all[0])
+        );
+        map.fitBounds(bounds, { padding: 60, pitch: 45, duration: 1200 });
+      }
+    }
   }, [route]);
 
   // Track registration per vehicle for labels.
@@ -262,7 +304,7 @@ export default function FleetMap({
       let marker = markersRef.current.get(vehicleId);
       if (!marker) {
         marker = new maplibregl.Marker({
-          element: markerEl(reg, pos.headingDeg),
+          element: markerEl(reg, pos.headingDeg, pos.speedKmph),
           anchor: "center",
         })
           .setLngLat([pos.longitude, pos.latitude])
@@ -270,10 +312,15 @@ export default function FleetMap({
         markersRef.current.set(vehicleId, marker);
       } else {
         marker.setLngLat([pos.longitude, pos.latitude]);
-        const icon = marker
-          .getElement()
-          .querySelector<HTMLDivElement>(".truck-icon");
-        if (icon) icon.style.transform = `rotate(${pos.headingDeg ?? 0}deg)`;
+        const el = marker.getElement();
+        const arrow = el.querySelector<HTMLDivElement>(".truck-arrow");
+        if (arrow) arrow.style.transform = `rotate(${pos.headingDeg ?? 0}deg)`;
+        const spd = el.querySelector<HTMLDivElement>(".truck-speed");
+        if (spd) spd.textContent = pos.speedKmph != null && pos.speedKmph > 0 ? Math.round(pos.speedKmph) + " km/h" : "";
+        const moving = pos.speedKmph != null && pos.speedKmph > 1;
+        arrow?.classList.toggle("moving", moving);
+        const svg = arrow?.querySelector("polygon");
+        if (svg) svg.setAttribute("fill", moving ? "#22c55e" : "#64748b");
       }
     }
   }, [positions]);
@@ -315,5 +362,37 @@ export default function FleetMap({
     });
   }, [focus]);
 
-  return <div className="map-root" ref={containerRef} />;
+  const [showRainfall, setShowRainfall] = useState(true);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !readyRef.current) return;
+    if (map.getLayer("mosdac-rainfall-layer")) {
+      map.setLayoutProperty("mosdac-rainfall-layer", "visibility", showRainfall ? "visible" : "none");
+    }
+  }, [showRainfall]);
+
+  return (
+    <div className="map-root" ref={containerRef}>
+      <div className="mosdac-toggle">
+        <button
+          className={`toolbtn${showRainfall ? " active" : ""}`}
+          onClick={() => setShowRainfall((s) => !s)}
+          title="Toggle ISRO MOSDAC rainfall overlay"
+        >
+          🌧️ {showRainfall ? "Hide" : "Show"} Rainfall
+        </button>
+      </div>
+      {showRainfall && (
+        <div className="rainfall-legend">
+          <h4>Rainfall (MOSDAC)</h4>
+          <div className="legend-row"><div className="legend-swatch" style={{ background: "rgba(170,210,255,0.6)" }} /> &lt;2 mm</div>
+          <div className="legend-row"><div className="legend-swatch" style={{ background: "rgba(50,140,255,0.7)" }} /> 2–10 mm</div>
+          <div className="legend-row"><div className="legend-swatch" style={{ background: "rgba(255,200,50,0.8)" }} /> 10–35 mm</div>
+          <div className="legend-row"><div className="legend-swatch" style={{ background: "rgba(255,40,40,0.85)" }} /> &gt;35 mm</div>
+          <div className="legend-source">INSAT-3DR HEM · ISRO</div>
+        </div>
+      )}
+    </div>
+  );
 }

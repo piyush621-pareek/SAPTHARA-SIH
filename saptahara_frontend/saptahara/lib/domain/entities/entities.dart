@@ -257,3 +257,93 @@ class VerificationReceipt {
 }
 
 enum SosState { idle, confirming, sending, sent, failed }
+
+// ---------- Fleet tracking ----------
+
+class FleetVehicle {
+  final String id;
+  final String name;
+  final String type; // truck, ambulance, supply
+  final String status; // moving, idle, offline
+  final double latitude;
+  final double longitude;
+  final double speed; // km/h
+  final String? currentRoute;
+  final DateTime lastSeen;
+
+  const FleetVehicle({
+    required this.id,
+    required this.name,
+    required this.type,
+    required this.status,
+    required this.latitude,
+    required this.longitude,
+    this.speed = 0,
+    this.currentRoute,
+    required this.lastSeen,
+  });
+
+  factory FleetVehicle.fromJson(Map<String, dynamic> j) => FleetVehicle(
+        id: j['id']?.toString() ?? '',
+        name: (j['name'] ?? j['registration'] ?? 'Vehicle').toString(),
+        type: (j['type'] ?? 'truck').toString(),
+        status: (j['status'] ?? 'idle').toString(),
+        latitude: (j['latitude'] as num?)?.toDouble() ?? 0,
+        longitude: (j['longitude'] as num?)?.toDouble() ?? 0,
+        speed: (j['speed'] as num?)?.toDouble() ?? 0,
+        currentRoute: j['current_route']?.toString(),
+        lastSeen: DateTime.tryParse(j['last_seen']?.toString() ?? '') ?? DateTime.now(),
+      );
+}
+
+// ---------- District connectivity ----------
+
+enum ConnStatus { good, degraded, down, unknown }
+
+class DistrictStatus {
+  final String name;
+  final String state;
+  final ConnStatus road;
+  final ConnStatus network;
+  final int openRoutes;
+  final int totalRoutes;
+  final String? note;
+
+  const DistrictStatus({
+    required this.name,
+    required this.state,
+    this.road = ConnStatus.unknown,
+    this.network = ConnStatus.unknown,
+    this.openRoutes = 0,
+    this.totalRoutes = 0,
+    this.note,
+  });
+}
+
+// ---------- Delivery tracking ----------
+
+enum DeliveryStage { scheduled, inTransit, delayed, delivered, cancelled }
+
+class DeliveryInfo {
+  final String id;
+  final String description;
+  final String origin;
+  final String destination;
+  final DeliveryStage stage;
+  final String? vehicleId;
+  final DateTime eta;
+  final DateTime? actualArrival;
+  final String? delayReason;
+
+  const DeliveryInfo({
+    required this.id,
+    required this.description,
+    required this.origin,
+    required this.destination,
+    required this.stage,
+    this.vehicleId,
+    required this.eta,
+    this.actualArrival,
+    this.delayReason,
+  });
+}

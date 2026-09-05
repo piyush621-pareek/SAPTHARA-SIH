@@ -1,4 +1,5 @@
 import { LanguageSwitcher, useLang } from "../i18n";
+import { clearToken, getName } from "../auth";
 
 interface Props {
   connected: boolean;
@@ -22,6 +23,13 @@ export default function StatBar({
   onMenuToggle,
 }: Props) {
   const { t } = useLang();
+  const userName = getName();
+
+  const handleLogout = () => {
+    clearToken();
+    window.location.reload();
+  };
+
   return (
     <header className="topbar">
       <button
@@ -31,12 +39,10 @@ export default function StatBar({
       >
         ☰
       </button>
+
+      {/* Left: MDoNER logo */}
       <div className="brand">
-        <div className="brand-mark">NER</div>
-        <div className="brand-text">
-          <div className="brand-title">{t("brandTitle")}</div>
-          <div className="brand-sub">{t("brandSub")}</div>
-        </div>
+        <img src="/mdoner-logo.png" alt="Ministry of Development of North Eastern Region" className="topbar-mdoner" />
       </div>
 
       <div className="stats">
@@ -52,6 +58,16 @@ export default function StatBar({
       <div className={`conn ${connected ? "up" : "down"}`}>
         <span className="conn-dot" />
         {connected ? t("live") : t("reconnecting")}
+      </div>
+
+      {/* Right: SIH logo */}
+      <img src="/sih-logo.png" alt="Smart India Hackathon 2026" className="topbar-sih" />
+
+      <div className="user-menu">
+        {userName && <span className="user-name">{userName}</span>}
+        <button className="logout-btn" onClick={handleLogout} title="Sign out">
+          Logout
+        </button>
       </div>
     </header>
   );
