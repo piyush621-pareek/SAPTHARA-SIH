@@ -7,6 +7,7 @@ import {
   getRisk,
   getLayers,
   getConnectivityStatus,
+  getVillageGeocode,
 } from "../controllers/geo.controller";
 
 const router = Router();
@@ -15,5 +16,6 @@ router.get("/context", validate(geoPointSchema), asyncHandler(getContext));
 router.get("/risk", validate(geoPointSchema), asyncHandler(getRisk));
 router.get("/layers", asyncHandler(getLayers));
 router.get("/connectivity", asyncHandler(getConnectivityStatus));
+router.get("/village", asyncHandler(getVillageGeocode));
 
 export default router;

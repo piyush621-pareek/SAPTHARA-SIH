@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:saptahara/app/auth.dart';
 import 'package:saptahara/core/notifications/notification_service.dart';
 import 'package:saptahara/core/storage/local_store.dart';
 import 'package:saptahara/core/theme/app_theme.dart';
+import 'package:saptahara/services/push/push_notification_service.dart';
 import 'package:saptahara/presentation/auth/login_screen.dart';
 import 'package:saptahara/presentation/navigation/app_shell.dart';
 
@@ -12,6 +15,16 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await LocalStore.init();
   await NotificationService.init();
+
+  // Firebase + FCM push notifications
+  try {
+    await Firebase.initializeApp();
+    FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
+    await PushNotificationService.instance.initialize();
+  } catch (_) {
+    // Firebase not configured yet — runs fine without it
+  }
+
   runApp(const ProviderScope(child: SaptaharaApp()));
 }
 

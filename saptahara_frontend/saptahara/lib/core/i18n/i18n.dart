@@ -230,6 +230,11 @@ class AppStrings {
     'noDeliveries': {'en': 'No deliveries to track', 'hi': 'कोई डिलीवरी नहीं', 'as': 'ডেলিভাৰী নাই', 'bn': 'ডেলিভারি নেই'},
     'noVerifiedReports': {'en': 'No verified reports yet.\nSync a report to see its ledger receipt.', 'hi': 'कोई सत्यापित रिपोर्ट नहीं।', 'as': 'সত্যাপিত প্ৰতিবেদন নাই।', 'bn': 'যাচাইকৃত রিপোর্ট নেই।'},
     'more': {'en': 'More', 'hi': 'और', 'as': 'অধিক', 'bn': 'আরো'},
+    'meshNetwork': {'en': 'BLE Mesh Network', 'hi': 'BLE मेश नेटवर्क', 'as': 'BLE মেশ নেটৱৰ্ক', 'bn': 'BLE মেশ নেটওয়ার্ক'},
+    'syncQueue': {'en': 'Sync Queue', 'hi': 'सिंक कतार', 'as': 'ছিংক শাৰী', 'bn': 'সিঙ্ক কিউ'},
+    'rainfallOverlay': {'en': 'MOSDAC Rainfall', 'hi': 'MOSDAC वर्षा', 'as': 'MOSDAC বৰষুণ', 'bn': 'MOSDAC বৃষ্টিপাত'},
+    'bhuvanRoute': {'en': 'Bhuvan Route (ISRO)', 'hi': 'भुवन मार्ग (ISRO)', 'as': 'ভুৱন পথ (ISRO)', 'bn': 'ভুবন রুট (ISRO)'},
+    'pushNotifications': {'en': 'Push Notifications', 'hi': 'पुश नोटिफिकेशन', 'as': 'পুশ নোটিফিকেশন', 'bn': 'পুশ নোটিফিকেশন'},
   };
 
   static String t(String key, String lang) =>

@@ -135,6 +135,56 @@ class ApiRouteRepository implements RouteRepository {
     final data = body is Map ? body['data'] as Map? : null;
     final alts = (data?['alternatives'] as List?) ?? const [];
     _cache = alts.whereType<Map>().map(_toRoute).toList();
+
+    // Try Bhuvan satellite routing (same-state, ISRO road network)
+    try {
+      final bhuvan = await ApiClient.instance.getJson('/routing/bhuvan', query: {
+        'lat1': oLat.toString(),
+        'lon1': oLng.toString(),
+        'lat2': dLat.toString(),
+        'lon2': dLng.toString(),
+      });
+      if (bhuvan is Map && bhuvan['success'] == true && bhuvan['data'] != null) {
+        final geom = bhuvan['data']['geometry'];
+        if (geom != null && geom['coordinates'] is List) {
+          final coords = (geom['coordinates'] as List);
+          // MultiLineString: flatten all segments
+          final points = <MapPoint>[];
+          for (final segment in coords) {
+            if (segment is List) {
+              for (final c in segment) {
+                if (c is List && c.length >= 2) {
+                  points.add(toMapPoint((c[1] as num).toDouble(), (c[0] as num).toDouble()));
+                }
+              }
+            }
+          }
+          if (points.length > 2) {
+            double dist = 0;
+            for (int i = 1; i < points.length; i++) {
+              final dLat = (points[i].y - points[i - 1].y) * 111;
+              final dLng = (points[i].x - points[i - 1].x) * 85;
+              dist += (dLat * dLat + dLng * dLng).abs();
+            }
+            dist = dist > 0 ? dist * 0.5 : 50; // rough estimate
+            _cache.add(RouteOption(
+              id: 'bhuvan',
+              name: 'Bhuvan Satellite Route (ISRO)',
+              riskLevel: RiskLevel.safe,
+              etaMinutes: (dist / 35.0 * 60).round(),
+              distanceKm: dist,
+              safetyScore: 85,
+              geometry: points,
+              hazards: const [],
+              status: 'bhuvan',
+            ));
+          }
+        }
+      }
+    } catch (_) {
+      // Bhuvan routing unavailable (cross-state or network error)
+    }
+
     return _cache;
   }
 

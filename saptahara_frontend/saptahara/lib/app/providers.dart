@@ -240,7 +240,7 @@ class FleetController extends StateNotifier<List<FleetVehicle>> {
 
   Future<void> _loadFromApi() async {
     try {
-      final body = await ApiClient.instance.getJson('/fleet/vehicles');
+      final body = await ApiClient.instance.getJson('/fleet');
       final list = (body is Map && body['data'] is List) ? body['data'] as List : const [];
       state = list.whereType<Map>().map((j) => FleetVehicle.fromJson(Map<String, dynamic>.from(j))).toList();
     } catch (_) {}
@@ -256,9 +256,80 @@ class FleetController extends StateNotifier<List<FleetVehicle>> {
 final fleetProvider = StateNotifierProvider<FleetController, List<FleetVehicle>>(
     (ref) => FleetController());
 
-/// ---------- District connectivity ----------
-final districtStatusProvider = Provider<List<DistrictStatus>>((ref) {
-  return const [
+/// ---------- District connectivity (legacy alias) ----------
+final districtStatusProvider = StateNotifierProvider<ConnectivityStatusController, List<DistrictStatus>>(
+    (ref) => ConnectivityStatusController());
+
+/// ---------- Delivery tracking (with live socket updates) ----------
+class DeliveryController extends StateNotifier<List<DeliveryInfo>> {
+  DeliveryController() : super(_initialDeliveries()) {
+    _sub = SocketService.instance.onDelivery.listen((data) {
+      final d = DeliveryInfo.fromJson(data);
+      final list = [...state];
+      final idx = list.indexWhere((e) => e.id == d.id);
+      if (idx >= 0) {
+        list[idx] = d;
+      } else {
+        list.insert(0, d);
+      }
+      state = list;
+    });
+  }
+
+  StreamSubscription? _sub;
+
+  static List<DeliveryInfo> _initialDeliveries() {
+    final now = DateTime.now();
+    return [
+      DeliveryInfo(id: 'D001', description: 'Medical Supplies — Batch 47', origin: 'Guwahati', destination: 'Tawang', stage: DeliveryStage.inTransit, eta: now.add(const Duration(hours: 6))),
+      DeliveryInfo(id: 'D002', description: 'Ration Kit — 200 units', origin: 'Dibrugarh', destination: 'Itanagar', stage: DeliveryStage.delayed, eta: now.add(const Duration(hours: 3)), delayReason: 'Landslide near Banderdewa'),
+      DeliveryInfo(id: 'D003', description: 'Construction Material', origin: 'Silchar', destination: 'Aizawl', stage: DeliveryStage.delivered, eta: now.subtract(const Duration(hours: 2)), actualArrival: now.subtract(const Duration(minutes: 45))),
+      DeliveryInfo(id: 'D004', description: 'Emergency Fuel Tanker', origin: 'Guwahati', destination: 'Kohima', stage: DeliveryStage.scheduled, eta: now.add(const Duration(hours: 12))),
+    ];
+  }
+
+  @override
+  void dispose() {
+    _sub?.cancel();
+    super.dispose();
+  }
+}
+
+final deliveryProvider = StateNotifierProvider<DeliveryController, List<DeliveryInfo>>(
+    (ref) => DeliveryController());
+
+/// ---------- District connectivity (with live socket updates) ----------
+class ConnectivityStatusController extends StateNotifier<List<DistrictStatus>> {
+  ConnectivityStatusController() : super(_initialDistricts()) {
+    _sub = SocketService.instance.onConnectivity.listen((data) {
+      final name = data['name'] as String? ?? '';
+      if (name.isEmpty) return;
+      final list = [...state];
+      final idx = list.indexWhere((e) => e.name == name);
+      if (idx >= 0) {
+        list[idx] = DistrictStatus(
+          name: name,
+          state: data['state'] as String? ?? list[idx].state,
+          road: ConnStatus.values.firstWhere(
+            (c) => c.name == (data['road'] ?? ''),
+            orElse: () => list[idx].road,
+          ),
+          network: ConnStatus.values.firstWhere(
+            (c) => c.name == (data['network'] ?? ''),
+            orElse: () => list[idx].network,
+          ),
+          openRoutes: (data['openRoutes'] as num?)?.toInt() ?? list[idx].openRoutes,
+          totalRoutes: (data['totalRoutes'] as num?)?.toInt() ?? list[idx].totalRoutes,
+          note: data['note'] as String?,
+        );
+        state = list;
+      }
+    });
+  }
+
+  StreamSubscription? _sub;
+
+  static List<DistrictStatus> _initialDistricts() => const [
     DistrictStatus(name: 'Tawang', state: 'Arunachal Pradesh', road: ConnStatus.degraded, network: ConnStatus.good, openRoutes: 2, totalRoutes: 3, note: 'Sela Pass intermittent closures'),
     DistrictStatus(name: 'West Kameng', state: 'Arunachal Pradesh', road: ConnStatus.good, network: ConnStatus.good, openRoutes: 4, totalRoutes: 4),
     DistrictStatus(name: 'Kamrup Metro', state: 'Assam', road: ConnStatus.good, network: ConnStatus.good, openRoutes: 8, totalRoutes: 8),
@@ -268,18 +339,16 @@ final districtStatusProvider = Provider<List<DistrictStatus>>((ref) {
     DistrictStatus(name: 'Aizawl', state: 'Mizoram', road: ConnStatus.good, network: ConnStatus.good, openRoutes: 3, totalRoutes: 3),
     DistrictStatus(name: 'Kohima', state: 'Nagaland', road: ConnStatus.degraded, network: ConnStatus.good, openRoutes: 2, totalRoutes: 3),
   ];
-});
 
-/// ---------- Delivery tracking ----------
-final deliveryProvider = Provider<List<DeliveryInfo>>((ref) {
-  final now = DateTime.now();
-  return [
-    DeliveryInfo(id: 'D001', description: 'Medical Supplies — Batch 47', origin: 'Guwahati', destination: 'Tawang', stage: DeliveryStage.inTransit, eta: now.add(const Duration(hours: 6))),
-    DeliveryInfo(id: 'D002', description: 'Ration Kit — 200 units', origin: 'Dibrugarh', destination: 'Itanagar', stage: DeliveryStage.delayed, eta: now.add(const Duration(hours: 3)), delayReason: 'Landslide near Banderdewa'),
-    DeliveryInfo(id: 'D003', description: 'Construction Material', origin: 'Silchar', destination: 'Aizawl', stage: DeliveryStage.delivered, eta: now.subtract(const Duration(hours: 2)), actualArrival: now.subtract(const Duration(minutes: 45))),
-    DeliveryInfo(id: 'D004', description: 'Emergency Fuel Tanker', origin: 'Guwahati', destination: 'Kohima', stage: DeliveryStage.scheduled, eta: now.add(const Duration(hours: 12))),
-  ];
-});
+  @override
+  void dispose() {
+    _sub?.cancel();
+    super.dispose();
+  }
+}
+
+/// ---------- MOSDAC rainfall overlay toggle ----------
+final rainfallOverlayProvider = StateProvider<bool>((ref) => false);
 
 /// ---------- Settings ----------
 final notificationsEnabledProvider = StateProvider<bool>((ref) => true);

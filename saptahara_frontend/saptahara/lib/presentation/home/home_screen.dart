@@ -26,6 +26,7 @@ class HomeScreen extends ConsumerWidget {
     final recommended = ref.watch(recommendedRouteProvider);
     final liveStatus = ref.watch(liveStatusProvider);
     final mapStyle = ref.watch(mapStyleProvider);
+    final showRainfall = ref.watch(rainfallOverlayProvider);
     final focus = ref.watch(focusedAlertProvider);
     final lang = ref.watch(languageProvider);
 
@@ -57,17 +58,51 @@ class HomeScreen extends ConsumerWidget {
                     const LiveTrackingCard(),
                     const SizedBox(height: 16),
                     routesAsync.when(
-                      data: (routes) => AppCard(
-                        padding: const EdgeInsets.all(10),
-                        child: LiveMap(
-                          routes: routes,
-                          highlightedRouteId: recommended?.id,
-                          hazards: alertsAsync.maybeWhen(data: (a) => a, orElse: () => []),
-                          style: mapStyle,
-                          focusLat: focus?.lat,
-                          focusLng: focus?.lng,
-                          focusNonce: focus?.nonce ?? 0,
-                        ),
+                      data: (routes) => Column(
+                        children: [
+                          AppCard(
+                            padding: const EdgeInsets.all(10),
+                            child: LiveMap(
+                              routes: routes,
+                              highlightedRouteId: recommended?.id,
+                              hazards: alertsAsync.maybeWhen(data: (a) => a, orElse: () => []),
+                              style: mapStyle,
+                              showRainfall: showRainfall,
+                              focusLat: focus?.lat,
+                              focusLng: focus?.lng,
+                              focusNonce: focus?.nonce ?? 0,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: InkWell(
+                                  onTap: () => ref.read(rainfallOverlayProvider.notifier).state = !showRainfall,
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                                    decoration: BoxDecoration(
+                                      color: showRainfall ? AppColors.panelBlue : AppColors.white,
+                                      borderRadius: BorderRadius.circular(AppRadii.cardSm),
+                                      border: Border.all(color: AppColors.black, width: 1.6),
+                                    ),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Icon(Icons.water_drop,
+                                            size: 16,
+                                            color: showRainfall ? AppColors.purpleTrust : AppColors.black),
+                                        const SizedBox(width: 6),
+                                        Text(AppStrings.t('rainfallOverlay', lang),
+                                            style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 12)),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
                       ),
                       loading: () => const AppCard(
                         child: SizedBox(height: 220, child: Center(child: CircularProgressIndicator())),

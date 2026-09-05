@@ -6,6 +6,7 @@ import {
 } from "../services/geo.service";
 import { getConnectivity, getDeliveries } from "../services/connectivity.service";
 import { GeoPointQuery } from "../schemas/geo.schema";
+import { geocodeVillage } from "../services/isro/bhuvan.geocode";
 
 /** GET /api/v1/geo/context?lat=&lng= — fused MOSDAC + CartoDEM + Bhuvan data. */
 export async function getContext(req: Request, res: Response): Promise<void> {
@@ -47,4 +48,15 @@ export async function getConnectivityStatus(_req: Request, res: Response): Promi
     success: true,
     data: { districts, deliveries, summary, district_summary: districtSummary },
   });
+}
+
+/** GET /api/v1/geo/village?name=sekuru — Bhuvan village geocoding (census-linked). */
+export async function getVillageGeocode(req: Request, res: Response): Promise<void> {
+  const name = req.query.name as string | undefined;
+  if (!name) {
+    res.status(400).json({ success: false, error: "name query parameter required" });
+    return;
+  }
+  const results = await geocodeVillage(name);
+  res.json({ success: true, data: results });
 }

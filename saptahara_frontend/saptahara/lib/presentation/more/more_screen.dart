@@ -6,6 +6,8 @@ import 'package:saptahara/presentation/fleet/fleet_screen.dart';
 import 'package:saptahara/presentation/connectivity/connectivity_screen.dart';
 import 'package:saptahara/presentation/delivery/delivery_screen.dart';
 import 'package:saptahara/presentation/verification/verification_screen.dart';
+import 'package:saptahara/presentation/mesh/mesh_screen.dart';
+import 'package:saptahara/presentation/sync/sync_queue_screen.dart';
 import 'package:saptahara/presentation/settings/settings_screen.dart';
 import 'package:saptahara/presentation/profile/profile_screen.dart';
 
@@ -48,6 +50,20 @@ class MoreScreen extends ConsumerWidget {
             title: AppStrings.t('verificationTrust', lang),
             subtitle: 'Ledger receipts for synced reports',
             onTap: () => _push(context, const VerificationScreen()),
+          ),
+          _Tile(
+            icon: Icons.bluetooth,
+            color: Colors.indigo,
+            title: AppStrings.t('meshNetwork', lang),
+            subtitle: 'Offline BLE mesh relay for no-network areas',
+            onTap: () => _push(context, const MeshScreen()),
+          ),
+          _Tile(
+            icon: Icons.sync,
+            color: Colors.teal,
+            title: AppStrings.t('syncQueue', lang),
+            subtitle: 'Offline report queue & retry status',
+            onTap: () => _push(context, const SyncQueueScreen()),
           ),
           const Divider(height: 32),
           _Tile(

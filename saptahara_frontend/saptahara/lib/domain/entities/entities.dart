@@ -346,4 +346,21 @@ class DeliveryInfo {
     this.actualArrival,
     this.delayReason,
   });
+
+  factory DeliveryInfo.fromJson(Map<String, dynamic> j) {
+    return DeliveryInfo(
+      id: j['id']?.toString() ?? '',
+      description: j['description']?.toString() ?? '',
+      origin: j['origin']?.toString() ?? '',
+      destination: j['destination']?.toString() ?? '',
+      stage: DeliveryStage.values.firstWhere(
+        (s) => s.name == (j['stage'] ?? ''),
+        orElse: () => DeliveryStage.scheduled,
+      ),
+      vehicleId: j['vehicleId']?.toString(),
+      eta: DateTime.tryParse(j['eta']?.toString() ?? '') ?? DateTime.now(),
+      actualArrival: j['actualArrival'] != null ? DateTime.tryParse(j['actualArrival'].toString()) : null,
+      delayReason: j['delayReason']?.toString(),
+    );
+  }
 }

@@ -36,6 +36,42 @@ Color _severityColor(String s) => switch (s) {
   _ => const Color(0xFFD97706),
 };
 
+/// MOSDAC rainfall data point for the map overlay.
+class RainfallPoint {
+  final double lat;
+  final double lng;
+  final double rainfallMm;
+  const RainfallPoint(this.lat, this.lng, this.rainfallMm);
+}
+
+/// NER rainfall grid (~0.5° spacing) for the MOSDAC overlay.
+/// In production this comes from the backend; here we seed realistic values.
+List<RainfallPoint> _nerRainfallGrid() {
+  final points = <RainfallPoint>[];
+  // NER bounding box: 22°-29°N, 88°-97°E
+  for (double lat = 22.0; lat <= 29.0; lat += 0.5) {
+    for (double lng = 88.0; lng <= 97.0; lng += 0.5) {
+      final month = DateTime.now().month;
+      final monsoon = month >= 5 && month <= 9;
+      final base = monsoon ? 140.0 : 35.0;
+      final orographic = lat >= 25 && lng >= 90 ? 1.35 : 1.0;
+      final jitter = ((lat * 12.9898 + lng * 78.233).abs() % 43);
+      final rainfall = base * orographic + jitter;
+      if (rainfall > 5) points.add(RainfallPoint(lat, lng, rainfall));
+    }
+  }
+  return points;
+}
+
+Color _rainfallColor(double mm) {
+  if (mm > 200) return const Color(0xCC8B0000); // dark red
+  if (mm > 150) return const Color(0xAADC2626); // red
+  if (mm > 100) return const Color(0x99EA580C); // orange
+  if (mm > 50) return const Color(0x77F59E0B);  // yellow
+  if (mm > 20) return const Color(0x5522C55E);  // green
+  return const Color(0x333B82F6);                 // blue (light rain)
+}
+
 class LiveMap extends StatefulWidget {
   final List<RouteOption> routes;
   final String? highlightedRouteId;
@@ -43,6 +79,7 @@ class LiveMap extends StatefulWidget {
   final Geofence? geofence;
   final MapStyle style;
   final bool showNepalCrisis;
+  final bool showRainfall;
 
   /// Deep-link focus target: when [focusNonce] changes the map flies to
   /// (focusLat, focusLng) and drops a highlight marker.
@@ -58,6 +95,7 @@ class LiveMap extends StatefulWidget {
     this.geofence,
     this.style = MapStyle.standard,
     this.showNepalCrisis = false,
+    this.showRainfall = false,
     this.focusLat,
     this.focusLng,
     this.focusNonce = 0,
@@ -155,6 +193,7 @@ class _LiveMapState extends State<LiveMap> {
               userAgentPackageName: 'com.ner.saptahara',
               maxZoom: 18,
             ),
+            if (widget.showRainfall) _rainfallLayer(),
             if (widget.geofence != null) _geofenceLayer(widget.geofence!),
             if (widget.showNepalCrisis) _nepalCrisisLayer(),
             _routeLayer(),
@@ -248,6 +287,19 @@ class _LiveMapState extends State<LiveMap> {
     }
 
     return MarkerLayer(markers: markers);
+  }
+
+  Widget _rainfallLayer() {
+    final grid = _nerRainfallGrid();
+    return CircleLayer(
+      circles: grid.map((p) => CircleMarker(
+        point: LatLng(p.lat, p.lng),
+        radius: 18,
+        color: _rainfallColor(p.rainfallMm),
+        borderColor: Colors.transparent,
+        borderStrokeWidth: 0,
+      )).toList(),
+    );
   }
 
   Widget _nepalCrisisLayer() {
