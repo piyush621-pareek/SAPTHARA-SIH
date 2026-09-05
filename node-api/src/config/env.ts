@@ -63,6 +63,8 @@ export const env = {
     cartodemUrl:
       process.env.CARTODEM_URL ?? "https://bhuvan-app1.nrsc.gov.in/api/dem",
     cartodemToken: process.env.CARTODEM_TOKEN ?? "",
+    // Bhuvan Village Geocoding API token (separate from WMS).
+    bhuvanGeocodingToken: process.env.BHUVAN_GEOCODING_TOKEN ?? "",
     // Fail fast so the request falls back to the model in dead zones.
     timeoutMs: Number(process.env.ISRO_TIMEOUT_MS ?? 4000),
   },
