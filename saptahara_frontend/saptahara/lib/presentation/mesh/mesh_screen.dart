@@ -38,9 +38,9 @@ class _MeshScreenState extends ConsumerState<MeshScreen> {
 
   Future<void> _toggleMesh() async {
     if (_active) {
-      await _mesh.stopListening();
+      await _mesh.stop();
     } else {
-      await _mesh.startListening();
+      await _mesh.start();
     }
     if (mounted) setState(() => _active = !_active);
   }
@@ -185,7 +185,7 @@ class _MeshScreenState extends ConsumerState<MeshScreen> {
                             children: [
                               Text('${a.type} from ${a.senderName}',
                                   style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 14)),
-                              Text('${a.message} · ${a.hops} hop(s) · Signal: ${a.signalStrength}',
+                              Text('${a.message} · ${a.hops} hop(s)',
                                   style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 12)),
                             ],
                           ),
@@ -197,7 +197,7 @@ class _MeshScreenState extends ConsumerState<MeshScreen> {
                             borderRadius: BorderRadius.circular(AppRadii.pill),
                             border: Border.all(color: AppColors.black, width: 1.2),
                           ),
-                          child: Text('${a.rssi} dBm',
+                          child: Text('${a.hops} hops',
                               style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 11)),
                         ),
                       ],

@@ -1,9 +1,11 @@
 import 'dart:async';
-import 'package:flutter_blue_plus/flutter_blue_plus.dart';
+import 'dart:convert';
+import 'dart:math';
+import 'package:nearby_connections/nearby_connections.dart';
 
-/// BLE Mesh alert relay for no-network scenarios.
-/// Broadcasts emergency alerts as BLE advertisements and listens for
-/// nearby broadcasts, creating a phone-to-phone mesh relay chain.
+/// BLE/WiFi Mesh alert relay for no-network scenarios.
+/// Uses Google Nearby Connections API for phone-to-phone communication.
+/// Each device advertises + discovers simultaneously, creating a mesh.
 class BleMeshService {
   BleMeshService._();
   static final BleMeshService instance = BleMeshService._();
@@ -11,104 +13,196 @@ class BleMeshService {
   final _alerts = StreamController<MeshAlert>.broadcast();
   Stream<MeshAlert> get onAlert => _alerts.stream;
 
+  final _peers = StreamController<int>.broadcast();
+  Stream<int> get onPeerCount => _peers.stream;
+
   final Set<String> _seenIds = {};
-  StreamSubscription? _scanSub;
-  bool _scanning = false;
+  final Set<String> _connectedEndpoints = {};
+  final List<MeshAlert> _outbox = [];
+  bool _active = false;
   int _peerCount = 0;
+  String _deviceName = 'SAPTHARA-${Random().nextInt(9999).toString().padLeft(4, '0')}';
+
+  static const Strategy _strategy = Strategy.P2P_CLUSTER;
+  static const String _serviceId = 'com.ner.saptahara.mesh';
 
   int get peerCount => _peerCount;
-  bool get isScanning => _scanning;
+  bool get isActive => _active;
+  String get deviceName => _deviceName;
 
-  /// Start listening for BLE mesh alerts from nearby devices.
-  Future<void> startListening() async {
-    if (_scanning) return;
+  /// Start both advertising and discovering nearby devices.
+  Future<bool> start() async {
+    if (_active) return true;
 
     try {
-      if (!await FlutterBluePlus.isSupported) return;
-
-      final adapterState = await FlutterBluePlus.adapterState.first;
-      if (adapterState != BluetoothAdapterState.on) return;
-
-      _scanning = true;
-      _peerCount = 0;
-
-      await FlutterBluePlus.startScan(
-        timeout: const Duration(hours: 24),
-        continuousUpdates: true,
+      // Start advertising (so others can find us)
+      await Nearby().startAdvertising(
+        _deviceName,
+        _strategy,
+        onConnectionInitiated: _onConnectionInitiated,
+        onConnectionResult: _onConnectionResult,
+        onDisconnected: _onDisconnected,
+        serviceId: _serviceId,
       );
 
-      _scanSub = FlutterBluePlus.scanResults.listen((results) {
-        _peerCount = results.length;
-        for (final r in results) {
-          _processScanResult(r);
-        }
-      });
-    } catch (_) {
-      _scanning = false;
+      // Start discovering (so we can find others)
+      await Nearby().startDiscovery(
+        _deviceName,
+        _strategy,
+        onEndpointFound: _onEndpointFound,
+        onEndpointLost: _onEndpointLost,
+        serviceId: _serviceId,
+      );
+
+      _active = true;
+      return true;
+    } catch (e) {
+      return false;
     }
   }
 
-  void _processScanResult(ScanResult result) {
-    final name = result.device.platformName;
-    if (!name.startsWith('SAPTHARA:')) return;
+  void _onEndpointFound(String id, String userName, String serviceId) {
+    _peerCount++;
+    _peers.add(_peerCount);
+    // Auto-connect to nearby SAPTHARA devices
+    Nearby().requestConnection(
+      _deviceName,
+      id,
+      onConnectionInitiated: _onConnectionInitiated,
+      onConnectionResult: _onConnectionResult,
+      onDisconnected: _onDisconnected,
+    );
+  }
+
+  void _onEndpointLost(String? id) {
+    _peerCount = (_peerCount - 1).clamp(0, 999);
+    _peers.add(_peerCount);
+  }
+
+  void _onConnectionInitiated(String id, ConnectionInfo info) {
+    // Auto-accept all SAPTHARA connections
+    Nearby().acceptConnection(
+      id,
+      onPayLoadRecieved: (endpointId, payload) {
+        _handlePayload(endpointId, payload);
+      },
+    );
+  }
+
+  void _onConnectionResult(String id, Status status) {
+    if (status == Status.CONNECTED) {
+      _connectedEndpoints.add(id);
+      // Send any queued outbox alerts to the new peer
+      for (final alert in _outbox) {
+        _sendToEndpoint(id, alert);
+      }
+    }
+  }
+
+  void _onDisconnected(String id) {
+    _connectedEndpoints.remove(id);
+  }
+
+  void _handlePayload(String endpointId, Payload payload) {
+    if (payload.type != PayloadType.BYTES || payload.bytes == null) return;
 
     try {
-      final parts = name.substring(9).split('|');
-      if (parts.length < 4) return;
-
-      final id = parts[0];
-      if (_seenIds.contains(id)) return;
+      final json = jsonDecode(utf8.decode(payload.bytes!));
+      final id = json['id'] as String? ?? '';
+      if (id.isEmpty || _seenIds.contains(id)) return;
       _seenIds.add(id);
 
-      _alerts.add(MeshAlert(
+      final alert = MeshAlert(
         id: id,
-        type: parts[1],
-        message: parts[2],
-        senderName: parts[3],
-        hops: int.tryParse(parts.length > 4 ? parts[4] : '1') ?? 1,
+        type: json['type'] as String? ?? 'SOS',
+        message: json['message'] as String? ?? '',
+        senderName: json['sender'] as String? ?? 'Unknown',
+        hops: (json['hops'] as num?)?.toInt() ?? 1,
         receivedAt: DateTime.now(),
-        rssi: result.rssi,
-      ));
+        fromEndpoint: endpointId,
+      );
+
+      _alerts.add(alert);
+
+      // Re-broadcast to all other connected endpoints (mesh relay)
+      final relayAlert = MeshAlert(
+        id: alert.id,
+        type: alert.type,
+        message: alert.message,
+        senderName: alert.senderName,
+        hops: alert.hops + 1,
+        receivedAt: alert.receivedAt,
+        fromEndpoint: endpointId,
+      );
+      for (final ep in _connectedEndpoints) {
+        if (ep != endpointId) {
+          _sendToEndpoint(ep, relayAlert);
+        }
+      }
     } catch (_) {}
   }
 
-  /// Broadcast an SOS alert via BLE advertisement name.
-  /// Nearby SAPTHARA apps pick this up and can re-broadcast.
+  void _sendToEndpoint(String endpointId, MeshAlert alert) {
+    final data = jsonEncode({
+      'id': alert.id,
+      'type': alert.type,
+      'message': alert.message,
+      'sender': alert.senderName,
+      'hops': alert.hops,
+    });
+    Nearby().sendBytesPayload(endpointId, utf8.encode(data));
+  }
+
+  /// Broadcast an alert to all connected peers.
   Future<bool> broadcastAlert({
     required String id,
     required String type,
     required String message,
     required String senderName,
   }) async {
-    try {
-      if (!await FlutterBluePlus.isSupported) return false;
+    if (!_active) return false;
 
-      // Encode alert into the device name (max ~20 chars visible in scan).
-      // Format: SAPTHARA:id|type|msg|sender|hops
-      // On Android we can set the local name for advertising.
-      // This is a simplified approach — production would use proper GATT services.
-      await FlutterBluePlus.setLogLevel(LogLevel.none);
+    _seenIds.add(id);
+    final alert = MeshAlert(
+      id: id,
+      type: type,
+      message: message,
+      senderName: senderName,
+      hops: 0,
+      receivedAt: DateTime.now(),
+      fromEndpoint: 'self',
+    );
 
-      // Store locally so we don't re-process our own broadcast
-      _seenIds.add(id);
+    _outbox.add(alert);
 
+    if (_connectedEndpoints.isEmpty) {
+      // No peers yet — alert is queued in outbox, will send when someone connects
       return true;
-    } catch (_) {
-      return false;
     }
+
+    for (final ep in _connectedEndpoints) {
+      _sendToEndpoint(ep, alert);
+    }
+    return true;
   }
 
-  /// Stop scanning for mesh alerts.
-  Future<void> stopListening() async {
-    _scanning = false;
-    await _scanSub?.cancel();
-    _scanSub = null;
-    await FlutterBluePlus.stopScan();
+  /// Stop advertising and discovering.
+  Future<void> stop() async {
+    _active = false;
+    _peerCount = 0;
+    _connectedEndpoints.clear();
+    try {
+      await Nearby().stopAdvertising();
+      await Nearby().stopDiscovery();
+      await Nearby().stopAllEndpoints();
+    } catch (_) {}
+    _peers.add(0);
   }
 
   void dispose() {
-    stopListening();
+    stop();
     _alerts.close();
+    _peers.close();
   }
 }
 
@@ -119,7 +213,7 @@ class MeshAlert {
   final String senderName;
   final int hops;
   final DateTime receivedAt;
-  final int rssi;
+  final String fromEndpoint;
 
   const MeshAlert({
     required this.id,
@@ -128,12 +222,6 @@ class MeshAlert {
     required this.senderName,
     required this.hops,
     required this.receivedAt,
-    required this.rssi,
+    required this.fromEndpoint,
   });
-
-  String get signalStrength {
-    if (rssi > -50) return 'Strong';
-    if (rssi > -70) return 'Medium';
-    return 'Weak';
-  }
 }
