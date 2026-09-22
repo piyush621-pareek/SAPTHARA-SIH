@@ -16,3 +16,18 @@ dump_err.log
 tools/
 tunnel*.log
 *.apk
+
+# Large satellite raw data (sample kept in scripts, full data too big for git)
+3RIMG_L2B_HEM/
+3RIMG_L3G_IMR_DLY/
+
+# Zip archives (source is already tracked)
+*.zip
+
+# Temp build/overlay scripts
+build_mosdac_overlay.py
+build_teaching.js
+
+# Editor / Claude config
+**/.claude/
+~$*

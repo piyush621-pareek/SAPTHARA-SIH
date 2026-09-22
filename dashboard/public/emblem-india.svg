@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 260" fill="#1a237e">
+  <!-- Simplified State Emblem of India (Ashoka Lion Capital) -->
+  <g transform="translate(100,0)">
+    <!-- Capital base -->
+    <rect x="-70" y="200" width="140" height="12" rx="3" fill="#1a237e"/>
+    <!-- Abacus band -->
+    <rect x="-60" y="185" width="120" height="16" rx="2" fill="#1a237e"/>
+    <!-- Ashoka Chakra on abacus -->
+    <circle cx="0" cy="193" r="6" fill="none" stroke="#fff" stroke-width="1.5"/>
+    <!-- Bell-shaped lotus base -->
+    <path d="M-55 200 Q-55 185 -45 178 Q-30 168 0 165 Q30 168 45 178 Q55 185 55 200Z" fill="#1a237e"/>
+    <!-- Lions (simplified seated lion silhouettes) -->
+    <!-- Center lion (facing viewer) -->
+    <ellipse cx="0" cy="130" rx="28" ry="35" fill="#1a237e"/>
+    <circle cx="0" cy="100" r="18" fill="#1a237e"/>
+    <!-- Mane -->
+    <ellipse cx="0" cy="105" rx="22" ry="20" fill="#1a237e"/>
+    <!-- Crown/top -->
+    <path d="M-8 82 Q0 72 8 82" fill="#1a237e"/>
+    <!-- Left lion (profile) -->
+    <ellipse cx="-30" cy="140" rx="20" ry="28" fill="#1a237e"/>
+    <ellipse cx="-35" cy="118" rx="14" ry="14" fill="#1a237e"/>
+    <!-- Right lion (profile) -->
+    <ellipse cx="30" cy="140" rx="20" ry="28" fill="#1a237e"/>
+    <ellipse cx="35" cy="118" rx="14" ry="14" fill="#1a237e"/>
+    <!-- Pillar shaft -->
+    <rect x="-8" y="200" width="16" height="10" fill="#1a237e"/>
+  </g>
+  <!-- Satyameva Jayate text -->
+  <text x="100" y="230" text-anchor="middle" font-size="10" font-weight="700" font-family="serif" fill="#1a237e">सत्यमेव जयते</text>
+  <text x="100" y="248" text-anchor="middle" font-size="8" font-weight="600" font-family="sans-serif" fill="#1a237e">SATYAMEVA JAYATE</text>
+</svg>

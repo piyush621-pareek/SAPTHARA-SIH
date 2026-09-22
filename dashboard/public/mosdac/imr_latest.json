@@ -1,0 +1,14 @@
+{
+  "file": "3RIMG_02SEP2026_0015_L3G_IMR_DLY_V01R00_IMR_DLY.png",
+  "bounds": [
+    79.99144783907816,
+    20.073420864368728,
+    96.97154010436473,
+    30.061710432184363
+  ],
+  "max_rainfall_mm": 316.1,
+  "mean_rainfall_mm": 19.65,
+  "valid_pixels": 17000,
+  "width": 170,
+  "height": 100
+}

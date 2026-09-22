@@ -1,0 +1,595 @@
+import { useEffect, useRef, useState, useCallback } from "react";
+import type { Socket } from "socket.io-client";
+import { createSocket } from "./socket";
+import {
+  fetchFleet,
+  fetchHazards,
+  fetchGeoRisk,
+  fetchLedger,
+  fetchLedgerVerify,
+  fetchRoute,
+  fetchConnectivity,
+} from "./api";
+import type {
+  FleetVehicle,
+  FleetPosition,
+  HazardFeature,
+  HazardBreach,
+  EmergencyAlert,
+  FeedItem,
+  GeoRisk,
+  LedgerEntry,
+  LedgerVerify,
+  RouteResult,
+  ConnectivityData,
+  DeliveryDelayedEvent,
+} from "./types";
+import type { OperatingMode } from "./places";
+import { NEPAL_DEMO_HAZARDS, NEPAL_DEMO_FLEET } from "./nepal-hazards";
+import FleetMap from "./components/FleetMap";
+import FleetSidebar from "./components/FleetSidebar";
+import AlertsFeed from "./components/AlertsFeed";
+import StatBar from "./components/StatBar";
+import SatelliteRiskCard from "./components/SatelliteRiskCard";
+import LedgerPanel from "./components/LedgerPanel";
+import ConnectivityPanel from "./components/ConnectivityPanel";
+import RoutePlanner from "./components/RoutePlanner";
+import ReportForm from "./components/ReportForm";
+import ModeSwitcher from "./components/ModeSwitcher";
+import { useLang } from "./i18n";
+
+// Default demo corridor (Guwahati → Tawang) until the planner picks another.
+const DEFAULT_OD = {
+  origin: { latitude: 26.1445, longitude: 91.7362 },
+  destination: { latitude: 27.5859, longitude: 91.8594 },
+};
+
+const BREACH_HOLD_MS = 20_000; // how long a geofence stays lit red after a breach
+const MAX_FEED = 40;
+
+export default function App() {
+  const { t } = useLang();
+  const [mode, setMode] = useState<OperatingMode>("india");
+  const modeRef = useRef(mode);
+  modeRef.current = mode;
+  const [fleet, setFleet] = useState<FleetVehicle[]>([]);
+  const [hazards, setHazards] = useState<HazardFeature[]>([]);
+  const [positions, setPositions] = useState<Record<string, FleetPosition>>({});
+  const [breached, setBreached] = useState<Set<string>>(new Set());
+  const [feed, setFeed] = useState<FeedItem[]>([]);
+  const [sosPings, setSosPings] = useState<
+    Array<{ id: string; latitude: number; longitude: number }>
+  >([]);
+  const [connected, setConnected] = useState(false);
+  const [mobilePanel, setMobilePanel] = useState<"fleet" | "ops" | null>(null);
+  const [focus, setFocus] = useState<{
+    longitude: number;
+    latitude: number;
+    nonce: number;
+  } | null>(null);
+
+  // Satellite risk (ISRO) + ledger state
+  const [satRisk, setSatRisk] = useState<GeoRisk | null>(null);
+  const [satLoading, setSatLoading] = useState(false);
+  const [satPoint, setSatPoint] = useState<{ lat: number; lng: number } | null>(null);
+  const [ledger, setLedger] = useState<LedgerEntry[]>([]);
+  const [ledgerVerify, setLedgerVerify] = useState<LedgerVerify | null>(null);
+  const [route, setRoute] = useState<RouteResult | null>(null);
+  const [connectivity, setConnectivity] = useState<ConnectivityData | null>(null);
+  const [routeOD, setRouteOD] = useState(DEFAULT_OD);
+  const [showPlanner, setShowPlanner] = useState(false);
+  const [showReport, setShowReport] = useState(false);
+  const [toast, setToast] = useState<string | null>(null);
+
+  // India-mode data backup (kept when switching to Nepal and restored on return)
+  const indiaDataRef = useRef<{ fleet: FleetVehicle[]; hazards: HazardFeature[]; positions: Record<string, FleetPosition> } | null>(null);
+
+  const switchMode = useCallback((m: OperatingMode) => {
+    if (m === mode) return;
+    if (m === "nepal") {
+      // Save India data
+      indiaDataRef.current = { fleet: [...fleet], hazards: [...hazards], positions: { ...positions } };
+      // Load Nepal demo data
+      const npFleet: FleetVehicle[] = NEPAL_DEMO_FLEET.map((f) => ({ ...f }));
+      setFleet(npFleet);
+      setHazards(NEPAL_DEMO_HAZARDS as unknown as HazardFeature[]);
+      const npPos: Record<string, FleetPosition> = {};
+      for (const v of npFleet) {
+        npPos[v.id] = {
+          vehicleId: v.id,
+          latitude: v.latitude!,
+          longitude: v.longitude!,
+          speedKmph: 20 + Math.round(Math.random() * 40),
+          headingDeg: Math.random() * 360,
+          at: new Date().toISOString(),
+        };
+      }
+      setPositions(npPos);
+      setRoute(null);
+      setRouteOD({ origin: { latitude: 27.7172, longitude: 85.3240 }, destination: { latitude: 28.2096, longitude: 83.9856 } });
+      setFeed([]);
+      setSosPings([]);
+    } else {
+      // Restore India data
+      if (indiaDataRef.current) {
+        setFleet(indiaDataRef.current.fleet);
+        setHazards(indiaDataRef.current.hazards);
+        setPositions(indiaDataRef.current.positions);
+      }
+      setRoute(null);
+      setRouteOD(DEFAULT_OD);
+      setFeed([]);
+      setSosPings([]);
+    }
+    setMode(m);
+  }, [mode, fleet, hazards, positions]);
+
+  const socketRef = useRef<Socket | null>(null);
+  const breachTimers = useRef<Map<string, number>>(new Map());
+  const regByVehicle = useRef<Map<string, string>>(new Map());
+
+  const focusOn = (lng: number, lat: number) =>
+    setFocus({ longitude: lng, latitude: lat, nonce: Date.now() });
+
+  // Clicking the map queries the ISRO-fused satellite risk for that point.
+  async function handleMapClick(lng: number, lat: number) {
+    setSatPoint({ lat, lng });
+    setSatLoading(true);
+    setSatRisk(null);
+    try {
+      const risk = await fetchGeoRisk(lat, lng);
+      setSatRisk(risk);
+    } catch {
+      setSatRisk(null);
+    } finally {
+      setSatLoading(false);
+    }
+  }
+
+  async function refreshLedger() {
+    try {
+      const [entries, verify] = await Promise.all([
+        fetchLedger(),
+        fetchLedgerVerify(),
+      ]);
+      setLedger(entries);
+      setLedgerVerify(verify);
+    } catch {
+      /* backend may be momentarily unavailable */
+    }
+  }
+
+  // Bootstrap: initial fleet + hazards.
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const [f, h] = await Promise.all([fetchFleet(), fetchHazards()]);
+        if (cancelled || modeRef.current === "nepal") return;
+        setFleet(f);
+        setHazards(h);
+        for (const v of f) regByVehicle.current.set(v.id, v.registration);
+        // Seed positions from any known last-location.
+        const seed: Record<string, FleetPosition> = {};
+        for (const v of f) {
+          if (v.latitude != null && v.longitude != null) {
+            seed[v.id] = {
+              vehicleId: v.id,
+              latitude: v.latitude,
+              longitude: v.longitude,
+              speedKmph: null,
+              headingDeg: null,
+              at: v.last_seen_at ?? new Date().toISOString(),
+            };
+          }
+        }
+        setPositions(seed);
+      } catch (err) {
+        // eslint-disable-next-line no-console
+        console.error("bootstrap failed:", err);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  // Socket.IO live wiring.
+  useEffect(() => {
+    const socket = createSocket();
+    socketRef.current = socket;
+
+    socket.on("connect", () => setConnected(true));
+    socket.on("disconnect", () => setConnected(false));
+
+    socket.on("delivery:delayed", (e: DeliveryDelayedEvent) => {
+      pushFeed({
+        id: `delay-${e.vehicle_id}-${Math.round(e.ts / 10000)}`,
+        kind: "delivery",
+        title: `Delivery delayed: ${e.registration}`,
+        detail: `${e.reason} · est. +${e.estimated_delay_min} min`,
+        vehicle: e.registration,
+        at: new Date(e.ts).toISOString(),
+        location: {
+          latitude: e.latitude ?? 0,
+          longitude: e.longitude ?? 0,
+        },
+      });
+    });
+
+    socket.on("fleet:update", (payload: { positions: FleetPosition[] }) => {
+      setPositions((prev) => {
+        const next = { ...prev };
+        for (const p of payload.positions) next[p.vehicleId] = p;
+        return next;
+      });
+    });
+
+    socket.on("hazard:breach", (b: HazardBreach) => {
+      const reg = b.vehicleId
+        ? regByVehicle.current.get(b.vehicleId) ?? b.vehicleId.slice(0, 8)
+        : "unknown";
+      const labels = b.hazards.map((h) => h.label).join(", ");
+      pushFeed({
+        id: `breach-${b.vehicleId}-${b.at}`,
+        kind: "breach",
+        title: `Geofence breach: ${labels}`,
+        detail: `${reg} entered an active hazard zone.`,
+        vehicle: reg,
+        at: b.at,
+        location: b.location,
+      });
+      // Light the breached hazards red, then auto-clear.
+      setBreached((prev) => {
+        const next = new Set(prev);
+        for (const h of b.hazards) next.add(h.id);
+        return next;
+      });
+      for (const h of b.hazards) {
+        const existing = breachTimers.current.get(h.id);
+        if (existing) window.clearTimeout(existing);
+        const t = window.setTimeout(() => {
+          setBreached((prev) => {
+            const next = new Set(prev);
+            next.delete(h.id);
+            return next;
+          });
+          breachTimers.current.delete(h.id);
+        }, BREACH_HOLD_MS);
+        breachTimers.current.set(h.id, t);
+      }
+    });
+
+    socket.on("emergency:alert", (a: EmergencyAlert) => {
+      const reg = a.vehicleId
+        ? regByVehicle.current.get(a.vehicleId) ?? a.vehicleId.slice(0, 8)
+        : a.channel;
+      const inside = a.insideHazards?.length
+        ? ` · inside ${a.insideHazards.map((h) => h.label).join(", ")}`
+        : "";
+      pushFeed({
+        id: `sos-${a.incidentId}`,
+        kind: "sos",
+        title: a.message || "SOS distress signal",
+        detail: `${reg} via ${a.channel.toUpperCase()}${inside}`,
+        vehicle: reg,
+        at: a.at,
+        location: a.location,
+      });
+      setSosPings((prev) =>
+        [
+          {
+            id: a.incidentId,
+            latitude: a.location.latitude,
+            longitude: a.location.longitude,
+          },
+          ...prev,
+        ].slice(0, 8)
+      );
+      // Draw operator attention to the distress location.
+      focusOn(a.location.longitude, a.location.latitude);
+    });
+
+    return () => {
+      socket.close();
+      socketRef.current = null;
+    };
+  }, []);
+
+  // Client-side position simulation — makes trucks drift along realistic
+  // headings so the map feels alive even when the backend isn't streaming.
+  useEffect(() => {
+    const interval = window.setInterval(() => {
+      setPositions((prev) => {
+        const next = { ...prev };
+        for (const [id, p] of Object.entries(next)) {
+          const heading = (p.headingDeg ?? Math.random() * 360) + (Math.random() - 0.5) * 30;
+          const speed = 25 + Math.random() * 45;
+          const dLat = Math.cos((heading * Math.PI) / 180) * 0.003 * (0.5 + Math.random());
+          const dLng = Math.sin((heading * Math.PI) / 180) * 0.003 * (0.5 + Math.random());
+          next[id] = {
+            ...p,
+            latitude: p.latitude + dLat,
+            longitude: p.longitude + dLng,
+            speedKmph: Math.round(speed),
+            headingDeg: heading % 360,
+            at: new Date().toISOString(),
+          };
+        }
+        return next;
+      });
+    }, 3000);
+    return () => window.clearInterval(interval);
+  }, []);
+
+  // Poll the audit ledger + chain verification (new SOS records appear here).
+  useEffect(() => {
+    refreshLedger();
+    const t = setInterval(refreshLedger, 4000);
+    return () => clearInterval(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Poll the hazard-aware route so the map re-draws the detour when a hazard
+  // geofence activates (or clears). Skip in Nepal mode — the planner sets the
+  // route directly via OSRM, and India's Bhuvan routing would overwrite it.
+  useEffect(() => {
+    if (mode === "nepal") return;
+    const load = async () => {
+      try {
+        setRoute(await fetchRoute(routeOD.origin, routeOD.destination));
+      } catch {
+        /* backend momentarily unavailable */
+      }
+    };
+    load();
+    const timer = setInterval(load, 8000);
+    return () => clearInterval(timer);
+  }, [routeOD, mode]);
+
+  // Poll district-wise connectivity + delivery statuses.
+  useEffect(() => {
+    const load = async () => {
+      try {
+        setConnectivity(await fetchConnectivity());
+      } catch {
+        /* backend momentarily unavailable */
+      }
+    };
+    load();
+    const t = setInterval(load, 8000);
+    return () => clearInterval(t);
+  }, []);
+
+  function pushFeed(item: FeedItem) {
+    setFeed((prev) => [item, ...prev.filter((f) => f.id !== item.id)].slice(0, MAX_FEED));
+  }
+
+  const activeTrucks = Object.values(positions).filter(
+    (p) => p.speedKmph != null && p.speedKmph > 1
+  ).length;
+  const sosCount = feed.filter((f) => f.kind === "sos").length;
+  const breachCount = feed.filter((f) => f.kind === "breach").length;
+  const delayedCount = connectivity?.summary.delayed ?? 0;
+
+  // Live per-vehicle status (by registration) derived from the recent alert
+  // feed + connectivity, so the fleet list can show a colour-coded state.
+  const statusByReg: Record<string, "sos" | "breach" | "delayed"> = {};
+  for (const f of feed) {
+    const cur = statusByReg[f.vehicle];
+    if (f.kind === "sos") statusByReg[f.vehicle] = "sos";
+    else if (f.kind === "breach" && cur !== "sos") statusByReg[f.vehicle] = "breach";
+    else if (f.kind === "delivery" && !cur) statusByReg[f.vehicle] = "delayed";
+  }
+  if (connectivity) {
+    for (const d of connectivity.deliveries) {
+      if (d.status === "delayed" && !statusByReg[d.registration]) {
+        statusByReg[d.registration] = "delayed";
+      }
+    }
+  }
+
+  return (
+    <div className="app">
+      <StatBar
+        connected={connected}
+        activeTrucks={activeTrucks}
+        totalTrucks={fleet.length}
+        hazardCount={hazards.length}
+        breachCount={breachCount}
+        sosCount={sosCount}
+        delayedCount={delayedCount}
+        onMenuToggle={() =>
+          setMobilePanel((m) => (m === "fleet" ? null : "fleet"))
+        }
+      />
+      <div className="workspace">
+        <div className={`mobile-panel fleet-slot ${mobilePanel === "fleet" ? "open" : ""}`}>
+          <FleetSidebar
+            fleet={fleet}
+            positions={positions}
+            statusByReg={statusByReg}
+            onFocus={(lng, lat) => {
+              focusOn(lng, lat);
+              setMobilePanel(null);
+            }}
+          />
+        </div>
+        <div className="map-wrap">
+          <FleetMap
+            mode={mode}
+            hazards={hazards}
+            fleet={fleet}
+            positions={positions}
+            breachedHazardIds={breached}
+            sosPings={sosPings}
+            focus={focus}
+            route={route}
+            onMapClick={handleMapClick}
+          />
+          <div className="map-hint">{t("mapHint")}</div>
+
+          <ModeSwitcher mode={mode} onChange={switchMode} />
+
+          {mode === "nepal" && (
+            <div className="nepal-banner">
+              <span className="nepal-badge">🇳🇵 NEPAL FLOOD RESPONSE</span>
+              <span className="nepal-demo-label">Demo data</span>
+              <button
+                className="toolbtn danger"
+                onClick={() => {
+                  const npVehicles = Object.keys(positions);
+                  if (!npVehicles.length) return;
+                  const vid = npVehicles[Math.floor(Math.random() * npVehicles.length)];
+                  const pos = positions[vid];
+                  const reg = fleet.find((f) => f.id === vid)?.registration ?? vid;
+                  const nearHazard = hazards.find((h) => {
+                    const ring = h.geometry.coordinates[0];
+                    let inside = false;
+                    for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+                      const xi = ring[i][0], yi = ring[i][1], xj = ring[j][0], yj = ring[j][1];
+                      if (yi > pos.latitude !== yj > pos.latitude && pos.longitude < ((xj - xi) * (pos.latitude - yi)) / (yj - yi) + xi) inside = !inside;
+                    }
+                    return inside;
+                  });
+                  const incidentId = `sos-np-${Date.now()}`;
+                  pushFeed({
+                    id: incidentId,
+                    kind: "sos",
+                    title: "🆘 Truck stuck in floodwater",
+                    detail: `${reg} via APP · ${nearHazard ? `inside ${nearHazard.label}` : "position reported"}`,
+                    vehicle: reg,
+                    at: new Date().toISOString(),
+                    location: { latitude: pos.latitude, longitude: pos.longitude },
+                  });
+                  setSosPings((prev) => [{ id: incidentId, latitude: pos.latitude, longitude: pos.longitude }, ...prev].slice(0, 8));
+                  focusOn(pos.longitude, pos.latitude);
+                  setToast(`SOS: ${reg} stuck in floodwater!`);
+                  window.setTimeout(() => setToast(null), 5000);
+                }}
+              >
+                🆘 Simulate Truck Stuck
+              </button>
+            </div>
+          )}
+
+          <div className="map-toolbar">
+            <button
+              className="toolbtn"
+              onClick={() => {
+                setShowPlanner((s) => !s);
+                setShowReport(false);
+              }}
+            >
+              🧭 {t("planRoute")}
+            </button>
+            <button
+              className="toolbtn"
+              onClick={() => {
+                setShowReport((s) => !s);
+                setShowPlanner(false);
+              }}
+            >
+              📝 {t("reportHazard")}
+            </button>
+          </div>
+
+          {showPlanner && (
+            <RoutePlanner
+              mode={mode}
+              nepalHazards={mode === "nepal" ? hazards : undefined}
+              onClose={() => setShowPlanner(false)}
+              onRoute={(r, f) => {
+                setRoute(r);
+                const rec = r.alternatives.find((a) => a.id === "recommended");
+                const coords = rec?.geometry.coordinates ?? r.geometry.coordinates;
+                if (coords.length) {
+                  const a = coords[0];
+                  const b = coords[coords.length - 1];
+                  setRouteOD({
+                    origin: { latitude: a[1], longitude: a[0] },
+                    destination: { latitude: b[1], longitude: b[0] },
+                  });
+                  // Place fleet vehicles along the route
+                  setPositions((prev) => {
+                    const ids = Object.keys(prev);
+                    if (!ids.length || coords.length < 2) return prev;
+                    const next = { ...prev };
+                    ids.forEach((id, i) => {
+                      const t = ids.length > 1 ? i / (ids.length - 1) : 0.5;
+                      const idx = Math.min(Math.floor(t * (coords.length - 1)), coords.length - 1);
+                      const nIdx = Math.min(idx + 1, coords.length - 1);
+                      const c = coords[idx];
+                      const nc = coords[nIdx];
+                      const heading = Math.atan2(nc[0] - c[0], nc[1] - c[1]) * (180 / Math.PI);
+                      next[id] = {
+                        ...next[id],
+                        latitude: c[1],
+                        longitude: c[0],
+                        headingDeg: heading,
+                        speedKmph: 30 + Math.round(Math.random() * 40),
+                        at: new Date().toISOString(),
+                      };
+                    });
+                    return next;
+                  });
+                }
+                focusOn(f.lng, f.lat);
+              }}
+            />
+          )}
+
+          {showReport && (
+            <ReportForm
+              pickedPoint={satPoint}
+              onClose={() => setShowReport(false)}
+              onSubmitted={() => {
+                setShowReport(false);
+                setToast(t("reportSent"));
+                window.setTimeout(() => setToast(null), 4000);
+              }}
+            />
+          )}
+
+          {toast && <div className="toast">{toast}</div>}
+          {route && (
+            <div className={`route-banner ${route.hazard_avoided ? "rerouted" : "clear"}`}>
+              <div className="route-legend">
+                <span className="rl green">━</span> Recommended
+                {route.alternatives.some((a) => a.id === "direct") && (
+                  <>
+                    <span className="rl red">┄</span> Direct
+                  </>
+                )}
+              </div>
+              <div className="route-status">
+                {route.hazard_avoided
+                  ? `⚠ REROUTED · ${route.distance_km} km · avoided ${route.avoided_hazards.join(", ")}`
+                  : `✓ CLEAR ROUTE · ${route.distance_km} km`}
+              </div>
+            </div>
+          )}
+          <SatelliteRiskCard
+            risk={satRisk}
+            loading={satLoading}
+            point={satPoint}
+            onClose={() => setSatPoint(null)}
+          />
+        </div>
+        <div className={`right-col mobile-panel ops-slot ${mobilePanel === "ops" ? "open" : ""}`}>
+          <AlertsFeed feed={feed} onFocus={focusOn} />
+          <ConnectivityPanel data={connectivity} onFocus={focusOn} />
+          <LedgerPanel entries={ledger} verify={ledgerVerify} />
+        </div>
+      </div>
+
+      {/* Mobile-only floating toggle for the alerts / districts column. */}
+      <button
+        className="mobile-fab"
+        onClick={() => setMobilePanel((m) => (m === "ops" ? null : "ops"))}
+      >
+        {mobilePanel === "ops" ? "✕ Close" : "Alerts & Districts"}
+      </button>
+    </div>
+  );
+}

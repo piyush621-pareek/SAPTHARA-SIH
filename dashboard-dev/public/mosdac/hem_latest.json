@@ -1,0 +1,14 @@
+{
+  "file": "3RIMG_03SEP2026_1615_L2B_HEM_V01R00_HEM.png",
+  "bounds": [
+    79.99211798308181,
+    20.021826560646637,
+    96.99538297172282,
+    30.006722596529436
+  ],
+  "max_rainfall_mm": 399.2,
+  "mean_rainfall_mm": 0.77,
+  "valid_pixels": 129720,
+  "width": 470,
+  "height": 276
+}
